@@ -15,7 +15,7 @@ class Pop():
     def offerLabour(self, wage: float, foodPrice: float):
         self.offeredLabour = True
         labourMax = self.edu
-        costOfLiving = MONTHLY_CRED_REQ + foodPrice + self.energyStandardOfLiving
+        costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving
         ratio = (wage * labourMax * EQUILIBRIUM_RATIO) / (costOfLiving * MIN_MARKUP)
         labourOffered = ratio * EQUILIBRIUM_RATIO * labourMax
         labourOffered = min(labourOffered, labourMax)
@@ -23,7 +23,7 @@ class Pop():
         return labourOffered
     
     def priceLabour(self, foodPrice: float):
-        costOfLiving = MONTHLY_CRED_REQ + foodPrice + self.energyStandardOfLiving
+        costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving
         labourOffered = self.edu * EQUILIBRIUM_RATIO
         newWage = costOfLiving / labourOffered
         return newWage
@@ -38,8 +38,8 @@ class Pop():
     def consumeEnergyReq(self):
 
         #   Basic energy requirement
-        if (self.funds > MONTHLY_CRED_REQ):
-            self.funds -= MONTHLY_CRED_REQ
+        if (self.funds > DAILY_CRED_REQ):
+            self.funds -= DAILY_CRED_REQ
             self.energyStarved = False
         else:
             self.funds = 0
@@ -56,10 +56,10 @@ class Pop():
         if (foodSupply == 0): return consumptionBundle
 
         maxFoodPossible = min(self.funds/foodPrice, foodSupply)
-        foodToBuy = min(maxFoodPossible, MONTHLY_FOOD_REQ)
+        foodToBuy = min(maxFoodPossible, DAILY_FOOD_REQ)
         consumptionBundle[FIRM_FOOD] = foodToBuy
 
-        if (foodToBuy < MONTHLY_FOOD_REQ): self.foodStarved = True
+        if (foodToBuy < DAILY_FOOD_REQ): self.foodStarved = True
         else: self.foodStarved = False
 
         self.funds -= foodToBuy * foodPrice

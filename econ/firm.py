@@ -43,7 +43,7 @@ class Firm():
         #   Production directly convertible into credits for fusion plant
         #   This type turns productivity straight into credits
         #   No capital depreciation, constant profit margin
-        if (self.firmType == FIRM_FUSION): price: float = CRED_PER_PP 
+        if (self.firmType == FIRM_ENERGY): price: float = CRED_PER_PP 
         else: price: float = marketConditions[self.firmType][0]
 
         #   (price * 1) here should be replaced by (price * A)
@@ -75,7 +75,7 @@ class Firm():
         if (labourSupply == 0.0): return inputsConsumed
         if (wage == None): return inputsConsumed
 
-        if not (self.firmType == FIRM_FUSION):
+        if not (self.firmType == FIRM_ENERGY):
             price = marketConditions[self.firmType][0]
             if (price == None): return inputsConsumed
 
@@ -95,7 +95,7 @@ class Firm():
 
         prodPoints = self.prodFunc(self.capital, self.inv[0])
 
-        if (self.firmType == FIRM_FUSION):
+        if (self.firmType == FIRM_ENERGY):
             #   Directly convert production into credits
             energyGenerated = CRED_PER_PP * prodPoints
             print("Energy generated: " + str(round(energyGenerated, 2)))

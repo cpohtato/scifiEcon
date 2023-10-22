@@ -1,1 +1,1 @@
-ECHO is on.
+Agent based simulation of scifi economy using energy-backed currency
