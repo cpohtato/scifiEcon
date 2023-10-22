@@ -1,0 +1,29 @@
+1 exec, 9 drones, 10 cap, 1.1 markup
+===== Month 120 =====
+Dividend paid: 12.58c
+Labour: 4.05/4.5 @ 4.87c ea.
+Fusion plant funds: 239.05c
+Fusion owner funds: 34.75c
+Fusion owner ESoL: 11.58c
+Drone 0 funds: 3.57c
+Drone 0 ESoL: 1.19c
+
+1 exec, 9 drones, 10 cap, 1.5 markup
+===== Month 120 =====
+Dividend paid: 17.81c
+Labour: 4.05/4.5 @ 3.57c ea.
+Fusion plant funds: 338.31c
+Fusion owner funds: 50.44c
+Fusion owner ESoL: 16.8c
+Drone 0 funds: 1.82c
+Drone 0 ESoL: 0.61c
+
+1 exec, 9 drones, 10 cap, 2.0 markup
+===== Month 120 =====
+Dividend paid: 21.41c
+Labour: 4.05/4.5 @ 2.68c ea.
+Fusion plant funds: 406.85c
+Fusion owner funds: 61.26c
+Fusion owner ESoL: 20.41c
+Drone 0 funds: 0.61c
+Drone 0 ESoL: 0.2c
