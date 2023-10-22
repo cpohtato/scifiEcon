@@ -6,6 +6,8 @@ class Firm():
         self.ownerId = ownerId
         self.firmType = firmType
         self.funds = initCred
+        self.dayExpenses = 0.0
+        self.dayRevenue = 0.0
 
         #   Should eventually include capital in inventory
         self.capital = initCap
@@ -46,7 +48,8 @@ class Firm():
         #   Production directly convertible into credits for fusion plant
         #   This type turns productivity straight into credits
         #   No capital depreciation, constant profit margin
-        if (self.firmType == FIRM_ENERGY): price: float = CRED_PER_PP 
+        # if (self.firmType == FIRM_ENERGY): price: float = CRED_PER_PP 
+        if (self.firmType == FIRM_ENERGY): price: float = 1
         else: price: float = marketConditions[self.firmType][0]
 
         #   (price * 1) here should be replaced by (price * A)
@@ -87,10 +90,16 @@ class Firm():
         inputsConsumed[MKT_LABOUR] = requestedLabour
         self.inv[0] = requestedLabour
         wage = marketConditions[0][0]
-        self.funds -= requestedLabour * wage
-        self.funds -= self.capital * MACHINE_OP_COST
+        labourExpenses = requestedLabour * wage
+        self.funds -= labourExpenses
 
-        print(DICT_FIRM[self.firmType] + " hired " + str(round(requestedLabour, 2)))
+        #   Assuming that all machinery is utilised
+        machineryOperatingCost = self.capital * MACHINE_OP_COST
+        self.funds -= machineryOperatingCost
+
+        self.dayExpenses += labourExpenses + machineryOperatingCost
+
+        # print(DICT_FIRM[self.firmType] + " hired " + str(round(requestedLabour, 2)))
 
         return inputsConsumed
     
@@ -104,19 +113,29 @@ class Firm():
         if not (self.firmType == FIRM_ENERGY): return goodsProduced
 
         #   Directly convert production into credits
-        print("Energy generated: " + str(round(goodsProduced, 2)))
+        # print("Energy generated: " + str(round(goodsProduced, 2)))
         self.funds += goodsProduced
+        self.dayRevenue = goodsProduced
+        #   TODO: remove this for energy firms
+        self.markup = MAX_MARKUP
         return 0.0   
         
     def receiveRevenue(self, clearingRatio: float, price: float):
         qtySupplied = self.findGoodsProduced()
-        self.funds += qtySupplied * clearingRatio * price
+        self.dayRevenue = qtySupplied * clearingRatio * price
+        self.funds += self.dayRevenue
+
+    def payCompanyTax(self, companyTaxRate: float):
+        profit = self.dayRevenue - self.dayExpenses
+        if (profit <= 0): return 0
+        tax = profit * companyTaxRate
+        self.funds -= tax
+        return tax
 
     def updateMarketShare(self, totalQty: float):
         qtySupplied = self.findGoodsProduced()
         marketShare: float = qtySupplied / totalQty
         self.markup = MIN_MARKUP + (MAX_MARKUP - MIN_MARKUP) * marketShare
-        print("Farm " + str(self.firmId) + " markup: " + str(round(self.markup, 2)))
     
     def payDividend(self):
         dividend = self.funds * DIVIDEND_RATIO
@@ -125,4 +144,6 @@ class Firm():
     
     def refresh(self):
         #   Consume all labour
-        self.inv[0] = 0
+        self.inv[MKT_LABOUR] = 0
+        self.dayExpenses = 0.0
+        self.dayRevenue = 0.0

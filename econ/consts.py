@@ -1,6 +1,6 @@
 from .utils import *
 
-SIM_LENGTH: int = 360
+SIM_LENGTH: int = 720
 
 INIT_EXECS: int = 4
 INIT_DRONES: int = 30
@@ -56,7 +56,7 @@ DICT_MKT = {
     MKT_FOOD: "Food"
 }
 
-CRED_PER_PP = 10.0
+CRED_PER_PP = 20.0
 
 DICT_PPC = {
     FIRM_ENERGY: 1.0/CRED_PER_PP,
@@ -67,3 +67,7 @@ DICT_VISC = {
     MKT_LABOUR: 1.0,
     MKT_FOOD: 1.0
 }
+
+INIT_GOVT_CRED = 20.0
+GOVT_INCOME_TAX_RATE = 0.0
+GOVT_COMPANY_TAX_RATE = 0.0

@@ -5,4 +5,20 @@ He3 industry
 Other consumer industries
 Machinery industry
 Dependent industries
-Plot ESoL over time
+
+No tax:
+Energy, Food, Food Prod
+6, 21
+12, 15
+11, 16
+13, 8
+10, 17, 27
+8, 21, 29
+10, 13, 25
+9, 23, 26
+
+10% company tax rate:
+Energy, Food, Food Prod
+9, 14, 28
+9, 18, 26
+9, 17, 28

@@ -8,32 +8,38 @@ class Pop():
         self.edu: float = initEdu
         self.offeredLabour: bool = False
         self.offeredLabourAmount: float = 0.0
+        self.income: float = 0.0
         self.energyStarved: bool = False
         self.energyStandardOfLiving: float = 0.0
         self.foodStarved = False
 
-    def offerLabour(self, wage: float, foodPrice: float):
+    def offerLabour(self, wage: float, foodPrice: float, incomeTaxRate: float):
         self.offeredLabour = True
         labourMax = self.edu
         costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving
-        ratio = (wage * labourMax * EQUILIBRIUM_RATIO) / (costOfLiving * MIN_MARKUP)
+        ratio = (wage * (1 - incomeTaxRate) * labourMax * EQUILIBRIUM_RATIO) / (costOfLiving * MIN_MARKUP)
         labourOffered = ratio * EQUILIBRIUM_RATIO * labourMax
         labourOffered = min(labourOffered, labourMax)
         self.offeredLabourAmount = labourOffered
         return labourOffered
     
-    def priceLabour(self, foodPrice: float):
+    def priceLabour(self, foodPrice: float, incomeTaxRate: float):
         costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving
         labourOffered = self.edu * EQUILIBRIUM_RATIO
-        newWage = costOfLiving / labourOffered
+        newWage = (costOfLiving / labourOffered) / (1 - incomeTaxRate)
         return newWage
     
     def receiveWage(self, clearingRatio: float, wage: float):
         if not self.offeredLabour: return
-        self.funds += self.offeredLabourAmount * clearingRatio * wage
+        self.income = self.offeredLabourAmount * clearingRatio * wage
+        self.funds += self.income
 
     def receiveDividend(self, dividend: float):
-        self.funds += dividend
+        self.income = dividend
+        self.funds += self.income
+
+    def receiveSubsidy(self, subsidy: float):
+        self.funds += subsidy
 
     def consumeEnergyReq(self):
 
@@ -103,7 +109,13 @@ class Pop():
     def refresh(self):
         self.offeredLabour = False
         self.offeredLabourAmount = 0.0
+        self.income = 0.0
     
     def getEdu(self):
         #   Could be more complicated in future
         return self.edu
+    
+    def payIncomeTax(self, incomeTaxRate: float):
+        tax = self.income * incomeTaxRate
+        self.funds -= tax
+        return tax
