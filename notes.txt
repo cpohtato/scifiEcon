@@ -1,15 +1,9 @@
 Competition-dependent markup
 Income tax
+Govt intervention, redistribution
 Multiple fusion plants?
 He3 industry
 Other consumer industries
-
-4:30
-Energy Poor, Food Poor
-0.25, 0.47
-0.23, 0.32
-0.23, 0.38
-0.29, 0.43
-
-4:45
-Energy Poor, Food Poor
+Machinery industry
+Dependent industry
+Plot ESoL over time

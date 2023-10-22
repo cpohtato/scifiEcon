@@ -47,8 +47,6 @@ class Planet():
             else: foodPrice = self.listMarkets[MKT_FOOD].getPrice()
 
             if (self.listMarkets[MKT_LABOUR].getPrice() == None):
-                #   Separated out because in future, pop will need more information to decide
-                #   e.g. newWage = drone.priceLabour(priceOfEssentialGoods)
                 wage: float = drone.priceLabour(foodPrice)
                 self.listMarkets[MKT_LABOUR].setPrice(wage)
             else: 
@@ -58,51 +56,56 @@ class Planet():
 
     def firmsBuyInputs(self):
         #   Firms optimise input bundle
-        #   Order of firms is random
-        numFirms = sum(len(industry) for industry in self.listFirms)
-        randOrder = list(range(numFirms))
-        random.shuffle(randOrder)
-
+        randOrder = self.getFirmRandOrder()
         for randFirm in randOrder:
-
-            #   Aggregate information about input markets to give each firm
-            marketConditions: list[list[float]] = []
-            for mkt in range(NUM_MARKETS):
-                marketConditions.append([self.listMarkets[mkt].getPrice(), 
-                                        self.listMarkets[mkt].getSupplyAvailable()])
-
-            #   Search 2D matrix for correct firm
-            firmType = 0
-            firmIdx = 0
-            firmsPassed = 0
-            firmFound = False
-            while not firmFound:
-                if (len(self.listFirms[firmType]) > (randFirm - firmsPassed)):
-                    firmFound = True
-                    firmIdx = randFirm - firmsPassed
-                else: 
-                    firmsPassed += len(self.listFirms[firmType])
-                    firmType += 1
-            
-            #   listFirms[firmType][firmIdx] now selects the correct random firm
+            marketConditions: list[list[float]] = self.getMarketConditions()
+            firmType, firmIdx = self.findRandFirm(randFirm)
 
             #   Price anchoring in empty market does not apply to fusion plants
             if not (firmType == FIRM_ENERGY):
                 if (self.listMarkets[firmType].getPrice() == None):
                     newPrice: float = self.listFirms[firmType][firmIdx].setNewPrice(marketConditions)
                     self.listMarkets[firmType].setPrice(newPrice)
-
-                    #   Update market conditions
-                    marketConditions: list[list[float]] = []
-                    for mkt in range(NUM_MARKETS):
-                        marketConditions.append([self.listMarkets[mkt].getPrice(), 
-                                                self.listMarkets[mkt].getSupplyAvailable()])
+                    marketConditions: list[list[float]] = self.getMarketConditions()
 
             inputsConsumed: list[float] = self.listFirms[firmType][firmIdx].optimiseInput(marketConditions)
 
             #   Buy inputs from market
             for mkt in range(NUM_MARKETS):
                 self.listMarkets[mkt].buy(inputsConsumed[mkt])
+
+    def getFirmRandOrder(self):
+        #   Random order of firms
+        #   TODO: rework this so that we can get pop or firm rand order with same function
+        numFirms = sum(len(industry) for industry in self.listFirms)
+        randOrder = list(range(numFirms))
+        random.shuffle(randOrder)
+        return randOrder
+    
+    def getMarketConditions(self):
+        #   Returns 2D array of price (0) and available quantity (1) for each market
+        marketConditions: list[list[float]] = []
+        for mkt in range(NUM_MARKETS):
+            marketConditions.append([self.listMarkets[mkt].getPrice(), 
+                                    self.listMarkets[mkt].getSupplyAvailable()])
+        return marketConditions
+    
+    def findRandFirm(self, randFirm: int):
+        #   Search 2D matrix for correct firm given randFirm index from getFirmRandOrder()
+        #   listFirms[firmType][firmIdx] should select the correct random firm
+        #   TODO: rework this so that we can find rand firm or pop using same function      
+        firmType = 0
+        firmIdx = 0
+        firmsPassed = 0
+        firmFound = False
+        while not firmFound:
+            if (len(self.listFirms[firmType]) > (randFirm - firmsPassed)):
+                firmFound = True
+                firmIdx = randFirm - firmsPassed
+            else: 
+                firmsPassed += len(self.listFirms[firmType])
+                firmType += 1
+        return firmType, firmIdx
     
     def popsReceiveWages(self):
         #   Pay drones wages
