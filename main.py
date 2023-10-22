@@ -16,12 +16,15 @@ def main():
     statEmployment = []
     statEnergyPoor = []
     statFoodPoor = []
+    statEnergyESoL = []
+    statFoodESoL = []
+    statDroneESoL = []
 
     for day in range(SIM_LENGTH):
 
         print()
         print("===== Day " + str(day+1) + " =====")
-        mktPrices, employment, energyPoor, foodPoor, totalEnergySupply = arcadia.step()
+        mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL = arcadia.step()
 
         statWages.append(mktPrices[MKT_LABOUR])
         statFoodPrices.append(mktPrices[MKT_FOOD])
@@ -29,6 +32,9 @@ def main():
         statEnergyPoor.append(energyPoor)
         statFoodPoor.append(foodPoor)
         statTotalEnergySupply.append(totalEnergySupply)
+        statEnergyESoL.append(avgESoL[0])
+        statFoodESoL.append(avgESoL[1])
+        statDroneESoL.append(avgESoL[2])
     
     plt.figure(1)
     plt.plot(statDays, statWages, label="Wage")
@@ -59,6 +65,16 @@ def main():
     plt.title("Poverty")
     plt.xlabel("Days")
     plt.ylabel("Proportion")
+    plt.xlim(1, SIM_LENGTH)
+    plt.legend()
+
+    plt.figure(5)
+    plt.plot(statDays, statEnergyESoL, label="Energy ESoL")
+    plt.plot(statDays, statFoodESoL, label="Food ESoL")
+    plt.plot(statDays, statDroneESoL, label="Drone ESoL")
+    plt.title("Average ESoL")
+    plt.xlabel("Days")
+    plt.ylabel("ESoL")
     plt.xlim(1, SIM_LENGTH)
     plt.legend()
 

@@ -116,6 +116,7 @@ class Firm():
         qtySupplied = self.findGoodsProduced()
         marketShare: float = qtySupplied / totalQty
         self.markup = MIN_MARKUP + (MAX_MARKUP - MIN_MARKUP) * marketShare
+        print("Farm " + str(self.firmId) + " markup: " + str(round(self.markup, 2)))
     
     def payDividend(self):
         dividend = self.funds * DIVIDEND_RATIO

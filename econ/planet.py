@@ -35,10 +35,11 @@ class Planet():
         self.printFunds()
         energyPoor, foodPoor = self.findPoverty()
         totalEnergySupply = self.findTotalEnergySupply()
+        avgESoL = self.findAvgESoL()
 
         self.refreshEconomy()
 
-        return mktPrices, employment, energyPoor, foodPoor, totalEnergySupply
+        return mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL
 
     def popsSupplyLabour(self):
         for drone in self.listPops[JOB_DRONE]:
@@ -274,6 +275,21 @@ class Planet():
         print("Total energy supply: " + str(round(totalEnergySupply, 2)))
 
         return totalEnergySupply
+    
+    def findAvgESoL(self):
+        #   Hardcoded for now
+        energyESoL = self.listPops[JOB_EXEC][0].energyStandardOfLiving
+        foodESoL = (self.listPops[JOB_EXEC][1].energyStandardOfLiving +
+                    self.listPops[JOB_EXEC][2].energyStandardOfLiving +
+                    self.listPops[JOB_EXEC][3].energyStandardOfLiving) / 3
+        validDrones = 0
+        droneESoL = 0.0
+        for drone in self.listPops[JOB_DRONE]:
+            if (drone.energyStarved): continue
+            validDrones += 1
+            droneESoL += drone.energyStandardOfLiving
+        if (validDrones > 0): droneESoL /= validDrones
+        return [energyESoL, foodESoL, droneESoL]
 
     def initPops(self):
         idCounter: int = 0
