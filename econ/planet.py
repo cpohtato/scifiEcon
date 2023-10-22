@@ -58,21 +58,10 @@ class Planet():
         #   Firms optimise input bundle
         randOrder = self.getFirmRandOrder()
         for randFirm in randOrder:
-            marketConditions: list[list[float]] = self.getMarketConditions()
             firmType, firmIdx = self.findRandFirm(randFirm)
-
-            #   Price anchoring in empty market does not apply to fusion plants
-            if not (firmType == FIRM_ENERGY):
-                if (self.listMarkets[firmType].getPrice() == None):
-                    newPrice: float = self.listFirms[firmType][firmIdx].setNewPrice(marketConditions)
-                    self.listMarkets[firmType].setPrice(newPrice)
-                    marketConditions: list[list[float]] = self.getMarketConditions()
-
+            marketConditions: list[list[float]] = self.ensureMarketAnchored(firmType, firmIdx)
             inputsConsumed: list[float] = self.listFirms[firmType][firmIdx].optimiseInput(marketConditions)
-
-            #   Buy inputs from market
-            for mkt in range(NUM_MARKETS):
-                self.listMarkets[mkt].buy(inputsConsumed[mkt])
+            self.buyBundleFromMarkets(inputsConsumed)
 
     def getFirmRandOrder(self):
         #   Random order of firms
@@ -102,95 +91,48 @@ class Planet():
             if (len(self.listFirms[firmType]) > (randFirm - firmsPassed)):
                 firmFound = True
                 firmIdx = randFirm - firmsPassed
+                break
             else: 
                 firmsPassed += len(self.listFirms[firmType])
                 firmType += 1
         return firmType, firmIdx
     
+    def buyBundleFromMarkets(self, bundle: list[float]):
+        for mkt in range(NUM_MARKETS):
+                self.listMarkets[mkt].buy(bundle[mkt])
+
+    def ensureMarketAnchored(self, firmType: int, firmIdx: int):
+        marketConditions: list[list[float]] = self.getMarketConditions()
+
+        #   Price anchoring in empty market does not apply to energy plants
+        #   If price already anchored then also return
+        if (firmType == FIRM_ENERGY): return marketConditions
+        if not (self.listMarkets[firmType].getPrice() == None): return marketConditions
+
+        #   Set new price for market if no price exists
+        newPrice: float = self.listFirms[firmType][firmIdx].setNewPrice(marketConditions)
+        self.listMarkets[firmType].setPrice(newPrice)
+        marketConditions = self.getMarketConditions()
+        return marketConditions
+    
     def popsReceiveWages(self):
-        #   Pay drones wages
         clearingRatio = self.listMarkets[MKT_LABOUR].getClearingRatio()
         wage = self.listMarkets[MKT_LABOUR].getPrice()
-
         for drone in self.listPops[JOB_DRONE]:
             drone.receiveWage(clearingRatio, wage)
 
     def firmsProduceOutput(self):
-        #   Produce output
         for firmType in range(NUM_FIRM_TYPES):
             for firm in self.listFirms[firmType]:
-                outputsProduced = firm.produceGoods()
-
-                if not (firmType == FIRM_ENERGY):
-                    self.listMarkets[firmType].addSupply(outputsProduced)
+                outputsProduced = firm.produceOutput()
+                if (firmType == FIRM_ENERGY): continue
+                self.listMarkets[firmType].addSupply(outputsProduced)
 
     def popsConsumeGoods(self):
         self.popsConsumeEnergyRequirement()
-        
-        #   Pop order is randomised here
-        numPops = sum(len(popType) for popType in self.listPops)
-        randOrder = list(range(numPops))
-        random.shuffle(randOrder)
-
-        for randPop in randOrder:
-
-            #   Aggregate information about input markets to give each pop
-            marketConditions: list[list[float]] = []
-            for mkt in range(NUM_MARKETS):
-                marketConditions.append([self.listMarkets[mkt].getPrice(), 
-                                        self.listMarkets[mkt].getSupplyAvailable()])
-
-            #   Search 2D matrix for correct pop
-            popType = 0
-            popIdx = 0
-            popsPassed = 0
-            popFound = False
-            while not popFound:
-                if (len(self.listPops[popType]) > (randPop - popsPassed)):
-                    popFound = True
-                    popIdx = randPop - popsPassed
-                else: 
-                    popsPassed += len(self.listPops[popType])
-                    popType += 1
-
-            #   listPops[popType][popIdx] now selects the correct random pop
-            #   Buy basic necessities first
-            goodsConsumed: list[float] = self.listPops[popType][popIdx].consumeNecessities(marketConditions)
-
-            #   Buy necessities from market
-            for mkt in range(NUM_MARKETS):
-                self.listMarkets[mkt].buy(goodsConsumed[mkt])
-
-        #   Then process disposable income
-        #   Add here and use same random order
-        for randPop in randOrder:
-
-            #   Aggregate information about input markets to give each pop
-            marketConditions: list[list[float]] = []
-            for mkt in range(NUM_MARKETS):
-                marketConditions.append([self.listMarkets[mkt].getPrice(), 
-                                        self.listMarkets[mkt].getSupplyAvailable()])
-
-            #   Search 2D matrix for correct pop
-            popType = 0
-            popIdx = 0
-            popsPassed = 0
-            popFound = False
-            while not popFound:
-                if (len(self.listPops[popType]) > (randPop - popsPassed)):
-                    popFound = True
-                    popIdx = randPop - popsPassed
-                else: 
-                    popsPassed += len(self.listPops[popType])
-                    popType += 1
-
-            #   listPops[popType][popIdx] now selects the correct random pop
-            #   Buy basic luxuries first
-            goodsConsumed: list[float] = self.listPops[popType][popIdx].consumeLuxuries(marketConditions)
-
-            #   Buy luxuries from market
-            for mkt in range(NUM_MARKETS):
-                self.listMarkets[mkt].buy(goodsConsumed[mkt])
+        randOrder = self.getPopRandOrder()
+        self.popsBuyBasics(randOrder)
+        self.popsBuyLuxuries(randOrder)
 
     def popsConsumeEnergyRequirement(self):
         #   Pops consume energy requirements
@@ -198,16 +140,56 @@ class Planet():
             for pop in self.listPops[type]:
                 pop.consumeEnergyReq()
 
-    def firmsReceiveRevenue(self):
-        #   Firms get paid from market
-        for firmType in range(NUM_FIRM_TYPES):
-            if not (firmType == FIRM_ENERGY):
-                clearingRatio = self.listMarkets[firmType].getClearingRatio()
-                price = self.listMarkets[firmType].getPrice()
+    def getPopRandOrder(self):
+        numPops = sum(len(popType) for popType in self.listPops)
+        randOrder = list(range(numPops))
+        random.shuffle(randOrder)
+        return randOrder
 
-                if not (price == None):
-                    for firm in self.listFirms[firmType]:
-                        firm.receiveRevenue(clearingRatio, price)
+    def findRandPop(self, randPop: int):
+        #   Search 2D matrix for correct pop given random pop index randPop
+        #   listPops[popType][popIdx] should select the correct random pop
+        #   TODO: merge this function with findRandFirm()
+        popType = 0
+        popIdx = 0
+        popsPassed = 0
+        popFound = False
+        while not popFound:
+            if (len(self.listPops[popType]) > (randPop - popsPassed)):
+                popFound = True
+                popIdx = randPop - popsPassed
+                break
+            else: 
+                popsPassed += len(self.listPops[popType])
+                popType += 1
+        return popType, popIdx
+    
+    def popsBuyBasics(self, randOrder: list[int]):
+        for randPop in randOrder:
+            marketConditions = self.getMarketConditions()
+            popType, popIdx = self.findRandPop(randPop)
+            popBasics: list[float] = self.listPops[popType][popIdx].consumeBasics(marketConditions)
+            self.buyBundleFromMarkets(popBasics)
+
+    def popsBuyLuxuries(self, randOrder: list[int]):
+        #   TODO: merge with popsBuyBasics?
+        for randPop in randOrder:
+            marketConditions = self.getMarketConditions()
+            popType, popIdx = self.findRandPop(randPop)
+            luxuries: list[float] = self.listPops[popType][popIdx].consumeLuxuries(marketConditions)
+            self.buyBundleFromMarkets(luxuries)
+
+    def firmsReceiveRevenue(self):
+        for firmType in range(NUM_FIRM_TYPES):
+            if (firmType == FIRM_ENERGY): continue
+
+            price = self.listMarkets[firmType].getPrice()
+            if (price == None): continue
+
+            clearingRatio = self.listMarkets[firmType].getClearingRatio()
+            for firm in self.listFirms[firmType]:
+                firm.receiveRevenue(clearingRatio, price)
+                firm.updateMarketShare(self.listMarkets[firmType].getSupplyTotal())
 
     def firmsPayDividends(self):
         #   Firms pay dividends
@@ -229,9 +211,9 @@ class Planet():
         self.listPops[JOB_EXEC][3].receiveDividend(dividend)
 
     def refreshEconomy(self):
-        #   Reset and adjust market prices
+        #   Adjust prices and refresh markets
         for mkt in self.listMarkets:
-            mkt.printResults()
+            mkt.printResults()  #   Optional
             mkt.refresh()
 
         #   Refresh pops

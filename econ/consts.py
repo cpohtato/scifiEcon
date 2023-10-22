@@ -1,6 +1,6 @@
 from .utils import *
 
-SIM_LENGTH: int = 90
+SIM_LENGTH: int = 360
 
 INIT_EXECS: int = 4
 INIT_DRONES: int = 30
@@ -8,8 +8,8 @@ INIT_DRONES: int = 30
 #   Proportion of goods in market sold to be considered market-clearing
 EQUILIBRIUM_RATIO = 0.9
 
-#   Lowest markup to be applied to goods after accounting for equilibrium ratio
 MIN_MARKUP = 1.2 / EQUILIBRIUM_RATIO
+MAX_MARKUP = 2.2 / EQUILIBRIUM_RATIO
 
 DIVIDEND_RATIO = 0.05
 PRICE_VISCOSITY = 0.1

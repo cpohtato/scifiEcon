@@ -11,6 +11,9 @@ class Firm():
         self.capital = initCap
         self.inv = [0 for i in range(NUM_MARKETS)]
 
+        #   Start as competitively as possible
+        self.markup = MIN_MARKUP
+
     def setNewPrice(self, marketConditions: list[list[float]]):
         wage = marketConditions[MKT_LABOUR][0]
         labourSupply = marketConditions[MKT_LABOUR][1]
@@ -47,7 +50,7 @@ class Firm():
         else: price: float = marketConditions[self.firmType][0]
 
         #   (price * 1) here should be replaced by (price * A)
-        optimalLabour: float = self.capital * (1 - DICT_PPC[self.firmType] * MIN_MARKUP * wage 
+        optimalLabour: float = self.capital * (1 - DICT_PPC[self.firmType] * self.markup * wage 
                                                / (price * 1))
 
         #   We can assume that productivity is monotonic up to inflection point
@@ -90,24 +93,29 @@ class Firm():
         print(DICT_FIRM[self.firmType] + " hired " + str(round(requestedLabour, 2)))
 
         return inputsConsumed
-
-    def produceGoods(self):
-
+    
+    def findGoodsProduced(self):
         prodPoints = self.prodFunc(self.capital, self.inv[0])
+        goodsProduced = prodPoints / DICT_PPC[self.firmType]
+        return goodsProduced
 
-        if (self.firmType == FIRM_ENERGY):
-            #   Directly convert production into credits
-            energyGenerated = CRED_PER_PP * prodPoints
-            print("Energy generated: " + str(round(energyGenerated, 2)))
-            self.funds += energyGenerated
-            return 0.0
-        else:
-            goodsProduced = prodPoints / DICT_PPC[self.firmType]
-            return goodsProduced
+    def produceOutput(self):
+        goodsProduced = self.findGoodsProduced()
+        if not (self.firmType == FIRM_ENERGY): return goodsProduced
+
+        #   Directly convert production into credits
+        print("Energy generated: " + str(round(goodsProduced, 2)))
+        self.funds += goodsProduced
+        return 0.0   
         
     def receiveRevenue(self, clearingRatio: float, price: float):
-        qtySupplied = self.produceGoods()
+        qtySupplied = self.findGoodsProduced()
         self.funds += qtySupplied * clearingRatio * price
+
+    def updateMarketShare(self, totalQty: float):
+        qtySupplied = self.findGoodsProduced()
+        marketShare: float = qtySupplied / totalQty
+        self.markup = MIN_MARKUP + (MAX_MARKUP - MIN_MARKUP) * marketShare
     
     def payDividend(self):
         dividend = self.funds * DIVIDEND_RATIO

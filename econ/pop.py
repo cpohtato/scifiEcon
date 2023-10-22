@@ -45,7 +45,7 @@ class Pop():
             self.funds = 0
             self.energyStarved = True
 
-    def consumeNecessities(self, marketConditions: list[list[float]]):
+    def consumeBasics(self, marketConditions: list[list[float]]):
 
         consumptionBundle = [0.0 for good in range(NUM_MARKETS)]
 
