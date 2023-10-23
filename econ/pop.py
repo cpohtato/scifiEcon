@@ -12,6 +12,7 @@ class Pop():
         self.energyStarved: bool = False
         self.energyStandardOfLiving: float = 0.0
         self.foodStarved = False
+        self.inv = [0.0 for good in range(NUM_MARKETS)]
 
     def offerLabour(self, wage: float, foodPrice: float, incomeTaxRate: float):
         self.offeredLabour = True
@@ -41,39 +42,40 @@ class Pop():
     def receiveSubsidy(self, subsidy: float):
         self.funds += subsidy
 
+    def receiveGoods(self, bundle: list[float]):
+        for good in range(NUM_MARKETS):
+            self.inv[good] += bundle[good]
+
     def consumeEnergyReq(self):
 
         #   Basic energy requirement
-        if (self.funds > DAILY_CRED_REQ):
+        if (self.funds >= DAILY_CRED_REQ):
             self.funds -= DAILY_CRED_REQ
             self.energyStarved = False
         else:
             self.funds = 0
             self.energyStarved = True
 
-    def consumeBasics(self, marketConditions: list[list[float]]):
+    def buyBasics(self, marketConditions: list[list[float]]):
 
-        consumptionBundle = [0.0 for good in range(NUM_MARKETS)]
+        bundle = [0.0 for good in range(NUM_MARKETS)]
 
         foodPrice = marketConditions[FIRM_FOOD][0]
         foodSupply = marketConditions[FIRM_FOOD][1]
 
-        if (self.funds == 0): return consumptionBundle
-        if (foodSupply == 0): return consumptionBundle
+        if (self.funds == 0): return bundle
+        if (foodSupply == 0): return bundle
 
         maxFoodPossible = min(self.funds/foodPrice, foodSupply)
         foodToBuy = min(maxFoodPossible, DAILY_FOOD_REQ)
-        consumptionBundle[FIRM_FOOD] = foodToBuy
-
-        if (foodToBuy < DAILY_FOOD_REQ): self.foodStarved = True
-        else: self.foodStarved = False
-
+        bundle[FIRM_FOOD] = foodToBuy
+        self.inv[MKT_FOOD] += foodToBuy
         self.funds -= foodToBuy * foodPrice
-        return consumptionBundle
+        return bundle
 
-    def consumeLuxuries(self, marketConditions: list[list[float]]):
+    def buyLuxuries(self, marketConditions: list[list[float]]):
 
-        consumptionBundle = [0.0 for good in range(NUM_MARKETS)]
+        bundle = [0.0 for good in range(NUM_MARKETS)]
 
         #   Pops optimise burning energy and buying more stuff
         disposable = self.funds * (1 - POP_SAVINGS_RATIO)
@@ -87,24 +89,29 @@ class Pop():
         BETA = 0.25
 
         optEnergy = disposable / (ALPHA/BETA + 1)
-        # optEnergy = 0
 
-        if not (foodPrice == None):
+        if (foodPrice == None):
+            optFood = 0
+        else:
             optFood = ALPHA/(BETA * foodPrice) * optEnergy
             # optFood = disposable / foodPrice
 
             foodToBuy = min(optFood, foodSupply)
-            consumptionBundle[MKT_FOOD] = foodToBuy
+            bundle[MKT_FOOD] = foodToBuy
+            self.inv[MKT_FOOD] += foodToBuy
             self.funds -= foodToBuy * foodPrice
-        else:
-            optFood = 0
 
         #   Energy standard of living
         #   Energy just gets burned here
         self.energyStandardOfLiving = 0.8 * self.energyStandardOfLiving + 0.2 * optEnergy
         self.funds -= self.energyStandardOfLiving
 
-        return consumptionBundle
+        return bundle
+    
+    def consumeGoods(self):
+        if (self.inv[MKT_FOOD] < DAILY_FOOD_REQ): self.foodStarved = True
+        else: self.foodStarved = False
+        self.inv[MKT_FOOD] = 0.0
 
     def refresh(self):
         self.offeredLabour = False

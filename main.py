@@ -26,7 +26,8 @@ def main():
         print("===== Day " + str(day+1) + " =====")
 
         if (day == 360):
-            arcadia.govt.companyTaxRate = 0.2
+            arcadia.govt.companyTaxRate = 0.5
+            arcadia.govt.energyTaxRate = 0.1
 
         mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL = arcadia.step()
 

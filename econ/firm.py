@@ -125,10 +125,12 @@ class Firm():
         self.dayRevenue = qtySupplied * clearingRatio * price
         self.funds += self.dayRevenue
 
-    def payCompanyTax(self, companyTaxRate: float):
+    def payTax(self, companyTaxRate: float, energyTaxRate: float):
         profit = self.dayRevenue - self.dayExpenses
         if (profit <= 0): return 0
-        tax = profit * companyTaxRate
+        if (self.firmType == FIRM_ENERGY): totalTaxRate = companyTaxRate + energyTaxRate
+        else: totalTaxRate = companyTaxRate
+        tax = profit * totalTaxRate
         self.funds -= tax
         return tax
 

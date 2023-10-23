@@ -24,18 +24,21 @@ class Planet():
         #   Refresh all entities
 
         self.popsSupplyLabour()
-        # self.govtBuysLabour()
+        self.govtBuysLabour()
         self.firmsBuyInputs()
         self.popsReceiveWages()
         self.govtTaxesLabour()
         self.firmsProduceOutput()
         self.govtSubsidisesPops()
+        self.popsConsumeEnergyRequirement()
+        self.popsBuyGoods()
+        self.govtRedistributesBasics()
         self.popsConsumeGoods()
         self.firmsReceiveRevenue()
         self.govtTaxesFirms()
         self.firmsPayDividends()
         self.govtTaxesExecs()
-        print("Govt tax raised: " + str(round(self.govt.dayTaxRaised, 2)))
+        print("Govt tax raised: " + str(round(self.govt.dayTaxRaised, 2)) + "c")
         
         #   Record stats before refresh
         mktPrices = self.getMarketPrices()
@@ -62,6 +65,11 @@ class Planet():
                 wage = self.listMarkets[MKT_LABOUR].getPrice()
 
             self.listMarkets[MKT_LABOUR].addSupply(drone.offerLabour(wage, foodPrice, self.govt.incomeTaxRate))
+
+    def govtBuysLabour(self):
+        marketConditions = self.getMarketConditions()
+        govtLabourDemand = self.govt.buyAdminLabour(marketConditions)
+        self.buyBundleFromMarkets(govtLabourDemand)
 
     def firmsBuyInputs(self):
         #   Firms optimise input bundle
@@ -143,17 +151,54 @@ class Planet():
                 if (firmType == FIRM_ENERGY): continue
                 self.listMarkets[firmType].addSupply(outputsProduced)
 
-    def popsConsumeGoods(self):
-        self.popsConsumeEnergyRequirement()
-        randOrder = self.getPopRandOrder()
-        self.popsBuyBasics(randOrder)
-        self.popsBuyLuxuries(randOrder)
-
     def popsConsumeEnergyRequirement(self):
         #   Pops consume energy requirements
         for type in range(NUM_JOB_TYPES):
             for pop in self.listPops[type]:
                 pop.consumeEnergyReq()
+
+    def popsBuyGoods(self):
+        randOrder = self.getPopRandOrder()
+        self.popsBuyBasics(randOrder)
+        self.popsBuyLuxuries(randOrder)
+
+    def govtRedistributesBasics(self):
+        #   TODO: merge with govtSubsidisesPops()?
+        #   First distribute to those with less than daily food requirement
+        #   Find total food deficit
+        foodDeficit = 0.0
+        for jobType in range(NUM_JOB_TYPES):
+            for pop in self.listPops[jobType]:
+                if (pop.inv[MKT_FOOD] < DAILY_FOOD_REQ):
+                    foodDeficit += DAILY_FOOD_REQ - pop.inv[MKT_FOOD]
+        print("Food deficit: " + str(round(foodDeficit, 2)))
+
+        marketConditions = self.getMarketConditions()
+        foodPrice = marketConditions[MKT_FOOD][0]
+        if (foodPrice == None): return
+        foodAvailable = marketConditions[MKT_FOOD][1]
+        if (foodAvailable == 0.0): return
+
+        foodBudgetRequest = foodPrice * min(foodDeficit, foodAvailable) 
+        foodBudget, deficitSubsidyRatio = self.govt.giveWelfare(foodBudgetRequest)
+        
+        bundle = [0.0 for good in range(NUM_MARKETS)]
+        foodToDistribute = foodBudget / foodPrice
+        bundle[MKT_FOOD] += foodToDistribute
+        self.buyBundleFromMarkets(bundle)
+
+        if (foodToDistribute == foodDeficit): distributionRatio = 1.0
+        else: distributionRatio = foodToDistribute / foodDeficit
+
+        print("Food distribution: " + str(round(foodToDistribute, 2)) + "/" + str(round(foodDeficit, 2)))
+
+        for jobType in range(NUM_JOB_TYPES):
+            for pop in self.listPops[jobType]:
+                if (pop.inv[MKT_FOOD] < DAILY_FOOD_REQ):
+                    popFoodDeficit = DAILY_FOOD_REQ - pop.inv[MKT_FOOD]
+                    welfareBundle = [0.0 for i in range(NUM_MARKETS)]
+                    welfareBundle[MKT_FOOD] = popFoodDeficit * distributionRatio
+                    pop.receiveGoods(welfareBundle)
 
     def getPopRandOrder(self):
         numPops = sum(len(popType) for popType in self.listPops)
@@ -183,7 +228,7 @@ class Planet():
         for randPop in randOrder:
             marketConditions = self.getMarketConditions()
             popType, popIdx = self.findRandPop(randPop)
-            popBasics: list[float] = self.listPops[popType][popIdx].consumeBasics(marketConditions)
+            popBasics: list[float] = self.listPops[popType][popIdx].buyBasics(marketConditions)
             self.buyBundleFromMarkets(popBasics)
 
     def popsBuyLuxuries(self, randOrder: list[int]):
@@ -191,8 +236,13 @@ class Planet():
         for randPop in randOrder:
             marketConditions = self.getMarketConditions()
             popType, popIdx = self.findRandPop(randPop)
-            luxuries: list[float] = self.listPops[popType][popIdx].consumeLuxuries(marketConditions)
+            luxuries: list[float] = self.listPops[popType][popIdx].buyLuxuries(marketConditions)
             self.buyBundleFromMarkets(luxuries)
+
+    def popsConsumeGoods(self):
+        for popType in range(NUM_JOB_TYPES):
+            for pop in self.listPops[popType]:
+                pop.consumeGoods()
 
     def firmsReceiveRevenue(self):
         for firmType in range(NUM_FIRM_TYPES):
@@ -210,7 +260,7 @@ class Planet():
         tax = 0.0
         for firmType in range(NUM_FIRM_TYPES):
             for firm in self.listFirms[firmType]:
-                tax += firm.payCompanyTax(self.govt.companyTaxRate)
+                tax += firm.payTax(self.govt.companyTaxRate, self.govt.energyTaxRate)
         self.govt.receiveTaxRevenue(tax)
 
     def firmsPayDividends(self):
@@ -323,38 +373,22 @@ class Planet():
         return [energyESoL, foodESoL, droneESoL]
     
     def govtSubsidisesPops(self):
-        welfareBudget = self.govt.giveWelfareBudget()
-
         #   First distribute to those with less than daily energy requirement
+        #   Find total energy deficit
         poorDeficit = 0.0
         for jobType in range(NUM_JOB_TYPES):
             for pop in self.listPops[jobType]:
                 if (pop.funds < DAILY_CRED_REQ):
                     poorDeficit += DAILY_CRED_REQ - pop.funds
         
-        if (welfareBudget < poorDeficit):
-            deficitSubsidyRatio = welfareBudget / poorDeficit
-            welfareBudget = 0
-        else:
-            deficitSubsidyRatio = 1.0
-            welfareBudget -= poorDeficit
-
-        if (poorDeficit > 0.0): print("Deficit subsidy ratio: " + str(round(welfareBudget / poorDeficit, 2)))
-        else: print("Deficit subsidy ratio: inf.")
+        welfareBudget, deficitSubsidyRatio = self.govt.giveWelfare(poorDeficit)
+        print("Energy deficit/welfare: " + str(round(poorDeficit, 2)) + "/" + str(round(welfareBudget, 2)) + "c")
 
         for jobType in range(NUM_JOB_TYPES):
             for pop in self.listPops[jobType]:
                 if (pop.funds < DAILY_CRED_REQ):
                     deficit = DAILY_CRED_REQ - pop.funds
                     pop.receiveSubsidy(deficit * deficitSubsidyRatio)
-
-        if (welfareBudget == 0.0): return
-        
-        numPops = INIT_EXECS + INIT_DRONES
-        subsidyPerPop = welfareBudget / numPops
-        for jobType in range(NUM_JOB_TYPES):
-            for pop in self.listPops[jobType]:
-                pop.receiveSubsidy(subsidyPerPop)
 
     def initPops(self):
         idCounter: int = 0
@@ -400,4 +434,4 @@ class Planet():
     
     def initGovt(self):
         #   Create some GovtPolicy class to contain all rules for govt
-        return Govt(INIT_GOVT_CRED, GOVT_INCOME_TAX_RATE, GOVT_COMPANY_TAX_RATE)
+        return Govt(INIT_GOVT_CRED, GOVT_INCOME_TAX_RATE, GOVT_COMPANY_TAX_RATE, GOVT_ENERGY_TAX_RATE)
