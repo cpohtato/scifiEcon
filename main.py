@@ -19,6 +19,7 @@ def main():
     statEnergyESoL = []
     statFoodESoL = []
     statDroneESoL = []
+    statGovtESoL = []
 
     for day in range(SIM_LENGTH):
 
@@ -40,6 +41,7 @@ def main():
         statEnergyESoL.append(avgESoL[0])
         statFoodESoL.append(avgESoL[1])
         statDroneESoL.append(avgESoL[2])
+        statGovtESoL.append(avgESoL[3])
     
     plt.figure(1)
     plt.plot(statDays, statWages, label="Wage")
@@ -77,6 +79,7 @@ def main():
     plt.plot(statDays, statEnergyESoL, label="Energy ESoL")
     plt.plot(statDays, statFoodESoL, label="Food ESoL")
     plt.plot(statDays, statDroneESoL, label="Drone ESoL")
+    plt.plot(statDays, statGovtESoL, label="Govt ESoL")
     plt.title("Average ESoL")
     plt.xlabel("Days")
     plt.ylabel("ESoL")

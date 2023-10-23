@@ -7,6 +7,7 @@ class Govt():
         self.companyTaxRate = companyTaxRate
         self.energyTaxRate = energyTaxRate
         self.dayTaxRaised: float = 0.0
+        self.dayVariableRent: float = 0.0
         self.dayAdminRatio: float = 1.0
 
         self.policyEnergyRedistribution = True
@@ -27,8 +28,9 @@ class Govt():
         if (self.policyFoodRedistribution): labourDemand += numPops * 0.01
 
         labourRequested = min(labourDemand, labourAvailable)
-        labourRequested = min(labourRequested, self.funds / wage)
+        labourRequested = min(labourRequested, self.funds / (wage * 1.1))
         self.funds -= labourRequested * wage
+        self.dayVariableRent += labourRequested * wage * 0.1
         self.dayAdminRatio = labourRequested / labourDemand
         print("Govt labour: " + str(round(labourRequested, 2)) + "/" + str(round(labourDemand, 2)))
 
@@ -37,18 +39,13 @@ class Govt():
 
         return bundle
 
-
     def receiveTaxRevenue(self, taxRevenue: float):
         self.dayTaxRaised += taxRevenue
         self.funds += taxRevenue
-
-    def giveWelfareBudget(self):
-        welfareBudget: float = self.funds / 2
-        self.funds -= welfareBudget
-        return welfareBudget
     
     def giveWelfare(self, poorDeficit: float):
-        welfareBudget = self.funds
+        welfareBudget = self.funds - self.dayVariableRent
+        if (welfareBudget < 0.0): ValueError
         if (welfareBudget < poorDeficit):
             deficitSubsidyRatio = welfareBudget / poorDeficit
         else:
@@ -57,8 +54,15 @@ class Govt():
         
         self.funds -= welfareBudget
         return welfareBudget, deficitSubsidyRatio
+    
+    def payRent(self):
+        rent = (self.funds - self.dayVariableRent) * DIVIDEND_RATIO
+        rent += self.dayVariableRent
+        self.funds -= rent
+        return rent
 
     def refresh(self):
         print("Treasury: " + str(round(self.funds, 2)))
         self.dayTaxRaised = 0.0
+        self.dayVariableRent: float = 0.0
         

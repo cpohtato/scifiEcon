@@ -37,6 +37,7 @@ class Planet():
         self.firmsReceiveRevenue()
         self.govtTaxesFirms()
         self.firmsPayDividends()
+        self.govtPaysRents()
         self.govtTaxesExecs()
         print("Govt tax raised: " + str(round(self.govt.dayTaxRaised, 2)) + "c")
         
@@ -282,6 +283,12 @@ class Planet():
         # print("Farm 2 dividend paid: " + str(round(dividend, 2)) + "c")
         self.listPops[JOB_EXEC][3].receiveDividend(dividend)
 
+    def govtPaysRents(self):
+        #   Hardcoded govt owner
+        rent = self.govt.payRent()
+        print("Govt rent: " + str(round(rent, 2)) + "c")
+        self.listPops[JOB_EXEC][4].receiveDividend(rent)
+
     def govtTaxesExecs(self):
         tax = 0.0
         for exec in self.listPops[JOB_EXEC]:
@@ -370,7 +377,8 @@ class Planet():
             validDrones += 1
             droneESoL += drone.energyStandardOfLiving
         if (validDrones > 0): droneESoL /= validDrones
-        return [energyESoL, foodESoL, droneESoL]
+        govtESoL = self.listPops[JOB_EXEC][4].energyStandardOfLiving
+        return [energyESoL, foodESoL, droneESoL, govtESoL]
     
     def govtSubsidisesPops(self):
         #   First distribute to those with less than daily energy requirement

@@ -2,7 +2,7 @@ from .utils import *
 
 SIM_LENGTH: int = 720
 
-INIT_EXECS: int = 4
+INIT_EXECS: int = 5
 INIT_DRONES: int = 30
 
 #   Proportion of goods in market sold to be considered market-clearing
