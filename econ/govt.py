@@ -9,6 +9,7 @@ class Govt():
         self.dayTaxRaised: float = 0.0
         self.dayVariableRent: float = 0.0
         self.dayAdminRatio: float = 1.0
+        self.inefficiency: float = 0.25
 
         self.policyEnergyRedistribution = True
         self.policyFoodRedistribution = True
@@ -28,9 +29,15 @@ class Govt():
         if (self.policyFoodRedistribution): labourDemand += numPops * 0.01
 
         labourRequested = min(labourDemand, labourAvailable)
-        labourRequested = min(labourRequested, self.funds / (wage * 1.1))
+        if (self.funds >= wage):
+            labourRequested = min(labourRequested, (self.funds - wage) / (wage * (1.0 + self.inefficiency)))
+            self.dayVariableRent += wage
+        else:
+            labourRequested = 0.0
+            self.dayVariableRent += self.funds
+            
         self.funds -= labourRequested * wage
-        self.dayVariableRent += labourRequested * wage * 0.1
+        self.dayVariableRent += labourRequested * wage * self.inefficiency
         self.dayAdminRatio = labourRequested / labourDemand
         print("Govt labour: " + str(round(labourRequested, 2)) + "/" + str(round(labourDemand, 2)))
 
@@ -56,7 +63,7 @@ class Govt():
         return welfareBudget, deficitSubsidyRatio
     
     def payRent(self):
-        rent = (self.funds - self.dayVariableRent) * DIVIDEND_RATIO
+        rent = (self.funds - self.dayVariableRent) * DIVIDEND_RATIO * 2
         rent += self.dayVariableRent
         self.funds -= rent
         return rent

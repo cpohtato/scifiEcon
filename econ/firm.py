@@ -136,7 +136,8 @@ class Firm():
 
     def updateMarketShare(self, totalQty: float):
         qtySupplied = self.findGoodsProduced()
-        marketShare: float = qtySupplied / totalQty
+        if (totalQty == 0): marketShare = 0.0
+        else: marketShare: float = qtySupplied / totalQty
         self.markup = MIN_MARKUP + (MAX_MARKUP - MIN_MARKUP) * marketShare
     
     def payDividend(self):

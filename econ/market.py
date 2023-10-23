@@ -45,10 +45,9 @@ class Market():
         if (clearingRatio == EQUILIBRIUM_RATIO): return
         if (clearingRatio > EQUILIBRIUM_RATIO):
             multiplier = 1 + DICT_VISC[self.mktType] * PRICE_VISCOSITY * random.random() * (clearingRatio / EQUILIBRIUM_RATIO)
-            self.price *= multiplier
         else:
-            multiplier = 1 - DICT_VISC[self.mktType] * PRICE_VISCOSITY * random.random() * min(((1 - clearingRatio / EQUILIBRIUM_RATIO)), 1.1)
-            self.price *= multiplier
+            multiplier = 1 - DICT_VISC[self.mktType] * PRICE_VISCOSITY * random.random() * min(((2 - clearingRatio / EQUILIBRIUM_RATIO)), 1.1)
+        self.price *= multiplier
             
     def clearSupply(self):
         self.supplyTotal = 0

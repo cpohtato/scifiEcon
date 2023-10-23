@@ -3,7 +3,7 @@ from .utils import *
 SIM_LENGTH: int = 720
 
 INIT_EXECS: int = 5
-INIT_DRONES: int = 30
+INIT_DRONES: int = 10
 
 #   Proportion of goods in market sold to be considered market-clearing
 EQUILIBRIUM_RATIO = 0.9
@@ -12,7 +12,7 @@ MIN_MARKUP = 1.2 / EQUILIBRIUM_RATIO
 MAX_MARKUP = 2.2 / EQUILIBRIUM_RATIO
 
 DIVIDEND_RATIO = 0.05
-PRICE_VISCOSITY = 0.05
+PRICE_VISCOSITY = 0.025
 
 #   1.0 credit = 33 Wh * 1m = 0.33 MWh
 DAILY_CRED_REQ: float = 1.0
@@ -69,6 +69,6 @@ DICT_VISC = {
 }
 
 INIT_GOVT_CRED = 20.0
-GOVT_INCOME_TAX_RATE = 0.1
-GOVT_COMPANY_TAX_RATE = 0.1
+GOVT_INCOME_TAX_RATE = 0.0
+GOVT_COMPANY_TAX_RATE = 0.2
 GOVT_ENERGY_TAX_RATE = 0.0

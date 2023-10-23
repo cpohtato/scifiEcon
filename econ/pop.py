@@ -75,6 +75,9 @@ class Pop():
 
     def buyLuxuries(self, marketConditions: list[list[float]]):
 
+        # if ((self.jobType == JOB_EXEC) & (self.popId == 4)): 
+        #     follow = True
+
         bundle = [0.0 for good in range(NUM_MARKETS)]
 
         #   Pops optimise burning energy and buying more stuff
