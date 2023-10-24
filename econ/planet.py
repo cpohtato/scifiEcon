@@ -48,10 +48,11 @@ class Planet():
         energyPoor, foodPoor = self.findPoverty()
         totalEnergySupply = self.findTotalEnergySupply()
         avgESoL = self.findAvgESoL()
+        avgNettIncomes = self.findAvgNettIncomes()
 
         self.refreshEconomy()
 
-        return mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL
+        return mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL, avgNettIncomes
 
     def popsSupplyLabour(self):
         for drone in self.listPops[JOB_DRONE]:
@@ -432,6 +433,15 @@ class Planet():
         for jobType in range(NUM_JOB_TYPES):
             for pop in self.listPops[jobType]:
                 pop.receiveSubsidy(credPerPop)
+
+    def findAvgNettIncomes(self):
+        nettEnergyIncome = self.listPops[JOB_EXEC][0].income * (1 - self.govt.incomeTaxRate)
+        nettFoodIncome = (sum(pop.income * (1 - self.govt.incomeTaxRate) for pop in self.listPops[JOB_EXEC][1:4])
+                        + sum(pop.income * (1 - self.govt.incomeTaxRate) for pop in self.listPops[JOB_EXEC][5:8])) / 6
+        nettDroneIncome = sum(pop.income * (1 - self.govt.incomeTaxRate) for pop in self.listPops[JOB_DRONE]) / INIT_DRONES
+        nettGovtIncome = self.listPops[JOB_EXEC][4].income * (1 - self.govt.incomeTaxRate)
+        nettCGIncome = sum(pop.income * (1 - self.govt.incomeTaxRate) for pop in self.listPops[JOB_EXEC][8:]) / 2
+        return [nettEnergyIncome, nettFoodIncome, nettDroneIncome, nettGovtIncome, nettCGIncome]
 
     def initPops(self):
         idCounter: int = 0

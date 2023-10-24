@@ -22,6 +22,12 @@ def main():
     statGovtESoL = []
     statCGESoL = []
 
+    statEnergyIncome = []
+    statFoodIncome = []
+    statDroneIncome = []
+    statGovtIncome = []
+    statCGIncome = []
+
     for day in range(SIM_LENGTH):
 
         print()
@@ -30,9 +36,9 @@ def main():
         if (day == 360):
             # arcadia.govt.incomeTaxRate = 0.2
             # arcadia.govt.companyTaxRate = 0.5
-            arcadia.govt.energyTaxRate = 0.2
+            arcadia.govt.energyTaxRate = 0.4
 
-        mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL = arcadia.step()
+        mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL, incomes = arcadia.step()
 
         statWages.append(mktPrices[MKT_LABOUR])
         statFoodPrices.append(mktPrices[MKT_FOOD])
@@ -58,6 +64,11 @@ def main():
             statCGPricesAdjusted.append(None)
         else:
             statCGPricesAdjusted.append(mktPrices[MKT_FOOD]/totalEnergySupply)
+        statEnergyIncome.append(incomes[0])
+        statFoodIncome.append(incomes[1])
+        statDroneIncome.append(incomes[2])
+        statGovtIncome.append(incomes[3])
+        statCGIncome.append(incomes[4])
     
     plt.figure(1)
     plt.plot(statDays, statWages, label="Wage")
@@ -111,6 +122,18 @@ def main():
     plt.title("Adjusted Market Prices")
     plt.xlabel("Days")
     plt.ylabel("Credits/Credit")
+    plt.xlim(1, SIM_LENGTH)
+    plt.legend()
+
+    plt.figure(7)
+    plt.plot(statDays, statEnergyIncome, label="Energy")
+    plt.plot(statDays, statFoodIncome, label="Food")
+    plt.plot(statDays, statDroneIncome, label="Drone")
+    plt.plot(statDays, statGovtIncome, label="Govt")
+    plt.plot(statDays, statCGIncome, label="CG")
+    plt.title("Average Income")
+    plt.xlabel("Days")
+    plt.ylabel("Credits")
     plt.xlim(1, SIM_LENGTH)
     plt.legend()
 
