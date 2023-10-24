@@ -14,6 +14,10 @@ class Pop():
         self.foodStarved = False
         self.inv = [0.0 for good in range(NUM_MARKETS)]
 
+        self.energyPref = 0.5
+        self.foodPref = 0.1
+        self.cgPref = 0.5
+
     def offerLabour(self, wage: float, foodPrice: float, incomeTaxRate: float):
         self.offeredLabour = True
         labourMax = self.edu
@@ -72,42 +76,106 @@ class Pop():
         self.inv[MKT_FOOD] += foodToBuy
         self.funds -= foodToBuy * foodPrice
         return bundle
+    
+    def utilityFunc(self, bundle: list[float]): 
+        energy: float = bundle[0]
+        food: float = bundle[1]
+        cg: float = bundle[2]
+        utility = pow(energy+1, self.energyPref) * pow(food+1, self.foodPref) * pow(cg+1, self.cgPref)
+        return utility
+    
+    def negUtilityFunc(self, bundle: list[float]): 
+        negUtility = -1.0 * self.utilityFunc(bundle)
+        return negUtility
+    
+    def margUtilityFunc(self, bundle: list[float]):
+        energy: float = bundle[0]
+        food: float = bundle[1]
+        cg: float = bundle[2]
+        dE = self.energyPref * pow(energy+1, self.energyPref-1) * pow(food+1, self.foodPref) * pow(cg+1, self.cgPref)
+        dF = pow(energy+1, self.energyPref) * self.foodPref * pow(food+1, self.foodPref-1) * pow(cg+1, self.cgPref)
+        dC = pow(energy+1, self.energyPref) * pow(food+1, self.foodPref) * self.cgPref * pow(cg+1, self.cgPref - 1)
+        dArr = np.array([dE, dF, dC])
+        return dArr
+
+    def negMargUtilityFunc(self, bundle: list[float]):
+        negMU = -1.0 * self.margUtilityFunc(bundle)
+        return negMU
 
     def buyLuxuries(self, marketConditions: list[list[float]]):
 
-        # if ((self.jobType == JOB_EXEC) & (self.popId == 4)): 
-        #     follow = True
-
         bundle = [0.0 for good in range(NUM_MARKETS)]
-
-        #   Pops optimise burning energy and buying more stuff
         disposable = self.funds * (1 - POP_SAVINGS_RATIO)
+        if (disposable < 0.0): 
+            disposable = 0.0
+            self.energyStandardOfLiving = 0.8 * self.energyStandardOfLiving
+            return bundle
 
-        foodPrice = marketConditions[FIRM_FOOD][0]
-        foodSupply = marketConditions[FIRM_FOOD][1]
+        foodPrice = marketConditions[MKT_FOOD][0]
+        if (foodPrice == None): 
+            foodPrice = 0.0
+            foodSupply = 0.0
+        else:
+            foodSupply = marketConditions[MKT_FOOD][1]
+        
+        cgPrice = marketConditions[MKT_CONSUMER][0]
+        if (cgPrice == None):
+            cgPrice = 0.0
+            cgSupply = 0.0
+        else:
+            cgSupply = marketConditions[MKT_CONSUMER][1]
+
+        disposable = np.float32(disposable)
+        foodSupply = np.float32(foodSupply)
+        cgSupply = np.float32(cgSupply)
+        foodPrice = np.float32(foodPrice)
+        cgPrice = np.float32(cgPrice)
+
+        supplyBounds = Bounds(np.array([0.0, 0.0, 0.0]), np.array([disposable, foodSupply, cgSupply]))
+        budgetConstraint = LinearConstraint(np.array([1.0, foodPrice, cgPrice]), np.array([-np.inf]), np.array([disposable]))
+        initBundle = np.array([0.0, 0.0, 0.0])
+        solution = minimize(self.negUtilityFunc, 
+                            initBundle, 
+                            method='SLSQP',
+                            constraints=budgetConstraint, 
+                            bounds=supplyBounds,
+                            jac=self.negMargUtilityFunc)
+
+        optEnergy = solution.x[0]
+        optFood = solution.x[1]
+        optCG = solution.x[2]
+
+        
+
+        bundle[MKT_FOOD] = optFood
+        self.funds -= optFood * foodPrice
+        bundle[MKT_CONSUMER] = optCG
+        self.funds -= optCG * cgPrice
 
         #   Hardcoded utility function, change later
-        #   U = F^ALPHA * E^BETA
-        ALPHA = 0.75
-        BETA = 0.25
+        #   U = Energy ^ Energy pref * Food ^ Food pref * CG ^ CG Pref
 
-        optEnergy = disposable / (ALPHA/BETA + 1)
+        # optEnergy = disposable / (self.foodPref/self.energyPref + 1)
 
-        if (foodPrice == None):
-            optFood = 0
-        else:
-            optFood = ALPHA/(BETA * foodPrice) * optEnergy
-            # optFood = disposable / foodPrice
+        # if (foodPrice == None):
+        #     optFood = 0
+        # else:
+        #     optFood = self.foodPref/(self.energyPref * foodPrice) * optEnergy
+        #     # optFood = disposable / foodPrice
 
-            foodToBuy = min(optFood, foodSupply)
-            bundle[MKT_FOOD] = foodToBuy
-            self.inv[MKT_FOOD] += foodToBuy
-            self.funds -= foodToBuy * foodPrice
+        #     foodToBuy = min(optFood, foodSupply)
+        #     bundle[MKT_FOOD] = foodToBuy
+        #     self.inv[MKT_FOOD] += foodToBuy
+        #     self.funds -= foodToBuy * foodPrice
 
-        #   Energy standard of living
+        #   Energy standard of living is a moving filter that represents pop expectations
         #   Energy just gets burned here
         self.energyStandardOfLiving = 0.8 * self.energyStandardOfLiving + 0.2 * optEnergy
-        self.funds -= self.energyStandardOfLiving
+        self.funds -= optEnergy
+
+        if (self.jobType == JOB_EXEC):
+            if ((self.popId == 5)):
+                follow = True
 
         return bundle
     

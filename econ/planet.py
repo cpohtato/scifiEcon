@@ -123,8 +123,9 @@ class Planet():
         marketConditions: list[list[float]] = self.getMarketConditions()
 
         #   Price anchoring in empty market does not apply to energy plants
-        #   If price already anchored then also return
         if (firmType == FIRM_ENERGY): return marketConditions
+
+        #   If price already anchored then also return
         if not (self.listMarkets[firmType].getPrice() == None): return marketConditions
 
         #   Set new price for market if no price exists
@@ -268,21 +269,43 @@ class Planet():
     def firmsPayDividends(self):
         #   Firms pay dividends
         #   Owner is hardcoded
+        #   TODO: make each firm search for owner by id to pay dividend
+
         dividend = self.listFirms[FIRM_ENERGY][0].payDividend()
         # print("Fusion dividend paid: " + str(round(dividend, 2)) + "c")
         self.listPops[JOB_EXEC][0].receiveDividend(dividend)
 
         dividend = self.listFirms[FIRM_FOOD][0].payDividend()
-        # print("Farm 0 dividend paid: " + str(round(dividend, 2)) + "c")
+        print("Farm 0 dividend paid: " + str(round(dividend, 2)) + "c")
         self.listPops[JOB_EXEC][1].receiveDividend(dividend)
 
         dividend = self.listFirms[FIRM_FOOD][1].payDividend()
-        # print("Farm 1 dividend paid: " + str(round(dividend, 2)) + "c")
+        print("Farm 1 dividend paid: " + str(round(dividend, 2)) + "c")
         self.listPops[JOB_EXEC][2].receiveDividend(dividend)
 
         dividend = self.listFirms[FIRM_FOOD][2].payDividend()
-        # print("Farm 2 dividend paid: " + str(round(dividend, 2)) + "c")
+        print("Farm 2 dividend paid: " + str(round(dividend, 2)) + "c")
         self.listPops[JOB_EXEC][3].receiveDividend(dividend)
+
+        dividend = self.listFirms[FIRM_FOOD][3].payDividend()
+        print("Farm 3 dividend paid: " + str(round(dividend, 2)) + "c")
+        self.listPops[JOB_EXEC][5].receiveDividend(dividend)
+
+        dividend = self.listFirms[FIRM_FOOD][4].payDividend()
+        print("Farm 4 dividend paid: " + str(round(dividend, 2)) + "c")
+        self.listPops[JOB_EXEC][6].receiveDividend(dividend)
+
+        dividend = self.listFirms[FIRM_FOOD][5].payDividend()
+        print("Farm 5 dividend paid: " + str(round(dividend, 2)) + "c")
+        self.listPops[JOB_EXEC][7].receiveDividend(dividend)
+
+        dividend = self.listFirms[FIRM_CONSUMER][0].payDividend()
+        print("CG 0 dividend paid: " + str(round(dividend, 2)) + "c")
+        self.listPops[JOB_EXEC][8].receiveDividend(dividend)
+
+        dividend = self.listFirms[FIRM_CONSUMER][1].payDividend()
+        print("CG 1 dividend paid: " + str(round(dividend, 2)) + "c")
+        self.listPops[JOB_EXEC][9].receiveDividend(dividend)
 
     def govtPaysRents(self):
         #   Hardcoded govt owner
@@ -379,7 +402,9 @@ class Planet():
             droneESoL += drone.energyStandardOfLiving
         if (validDrones > 0): droneESoL /= validDrones
         govtESoL = self.listPops[JOB_EXEC][4].energyStandardOfLiving
-        return [energyESoL, foodESoL, droneESoL, govtESoL]
+        cgESoL = (self.listPops[JOB_EXEC][5].energyStandardOfLiving +
+                  self.listPops[JOB_EXEC][6].energyStandardOfLiving) /2
+        return [energyESoL, foodESoL, droneESoL, govtESoL, cgESoL]
     
     def govtSubsidisesPops(self):
         #   First distribute to those with less than daily energy requirement
@@ -425,6 +450,7 @@ class Planet():
 
     def initFirms(self):
         #   Hardcoded owners for now
+        #   TODO: assign owners dynamically
         #   Fusion plant
         idCounter = 0
         listFirms: list[list[Firm]] = [[] for i in range(NUM_FIRM_TYPES)]
@@ -433,13 +459,29 @@ class Planet():
         idCounter += 1
 
         #   Food
-        listFirms[FIRM_FOOD].append(Firm(idCounter, 1, FIRM_FOOD, FIRM_INIT_CRED, 6.0))
+        listFirms[FIRM_FOOD].append(Firm(idCounter, 1, FIRM_FOOD, FIRM_INIT_CRED, 15.0))
         idCounter += 1
 
-        listFirms[FIRM_FOOD].append(Firm(idCounter, 2, FIRM_FOOD, FIRM_INIT_CRED, 4.0))
+        listFirms[FIRM_FOOD].append(Firm(idCounter, 2, FIRM_FOOD, FIRM_INIT_CRED, 10.0))
         idCounter += 1
 
-        listFirms[FIRM_FOOD].append(Firm(idCounter, 3, FIRM_FOOD, FIRM_INIT_CRED, 2.0))
+        listFirms[FIRM_FOOD].append(Firm(idCounter, 3, FIRM_FOOD, FIRM_INIT_CRED, 5.0))
+        idCounter += 1
+
+        listFirms[FIRM_FOOD].append(Firm(idCounter, 5, FIRM_FOOD, FIRM_INIT_CRED, 5.0))
+        idCounter += 1
+
+        listFirms[FIRM_FOOD].append(Firm(idCounter, 6, FIRM_FOOD, FIRM_INIT_CRED, 10.0))
+        idCounter += 1
+
+        listFirms[FIRM_FOOD].append(Firm(idCounter, 7, FIRM_FOOD, FIRM_INIT_CRED, 10.0))
+        idCounter += 1
+
+        #   Consumer goods
+        listFirms[FIRM_CONSUMER].append(Firm(idCounter, 8, FIRM_CONSUMER, FIRM_INIT_CRED, 10.0))
+        idCounter += 1
+
+        listFirms[FIRM_CONSUMER].append(Firm(idCounter, 9, FIRM_CONSUMER, FIRM_INIT_CRED, 15.0))
         idCounter += 1
 
         return listFirms

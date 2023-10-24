@@ -1,7 +1,3 @@
-import matplotlib
-matplotlib.use('tkagg')
-from matplotlib import pyplot as plt
-# import numpy as np
 from econ import *
 
 def main():
@@ -12,8 +8,10 @@ def main():
     statDays = [i for i in range(1, 1 + SIM_LENGTH)]
     statWages = []
     statFoodPrices = []
+    statCGPrices = []
     statWagesAdjusted = []
     statFoodPricesAdjusted = []
+    statCGPricesAdjusted = []
     statTotalEnergySupply = []
     statEmployment = []
     statEnergyPoor = []
@@ -22,6 +20,7 @@ def main():
     statFoodESoL = []
     statDroneESoL = []
     statGovtESoL = []
+    statCGESoL = []
 
     for day in range(SIM_LENGTH):
 
@@ -30,13 +29,14 @@ def main():
 
         if (day == 360):
             # arcadia.govt.incomeTaxRate = 0.2
-            arcadia.govt.companyTaxRate = 0.5
-            # arcadia.govt.energyTaxRate = 0.1
+            # arcadia.govt.companyTaxRate = 0.5
+            arcadia.govt.energyTaxRate = 0.2
 
         mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL = arcadia.step()
 
         statWages.append(mktPrices[MKT_LABOUR])
         statFoodPrices.append(mktPrices[MKT_FOOD])
+        statCGPrices.append(mktPrices[MKT_CONSUMER])
         statEmployment.append(employment)
         statEnergyPoor.append(energyPoor)
         statFoodPoor.append(foodPoor)
@@ -45,6 +45,7 @@ def main():
         statFoodESoL.append(avgESoL[1])
         statDroneESoL.append(avgESoL[2])
         statGovtESoL.append(avgESoL[3])
+        statCGESoL.append(avgESoL[4])
         if (mktPrices[MKT_LABOUR] == None): 
             statWagesAdjusted.append(None)
         else:
@@ -53,10 +54,15 @@ def main():
             statFoodPricesAdjusted.append(None)
         else:
             statFoodPricesAdjusted.append(mktPrices[MKT_FOOD]/totalEnergySupply)
+        if (mktPrices[MKT_CONSUMER] == None):
+            statCGPricesAdjusted.append(None)
+        else:
+            statCGPricesAdjusted.append(mktPrices[MKT_FOOD]/totalEnergySupply)
     
     plt.figure(1)
     plt.plot(statDays, statWages, label="Wage")
     plt.plot(statDays, statFoodPrices, label="Food")
+    plt.plot(statDays, statCGPrices, label="CG")
     plt.title("Market Prices")
     plt.xlabel("Days")
     plt.ylabel("Credits")
@@ -91,6 +97,7 @@ def main():
     plt.plot(statDays, statFoodESoL, label="Food ESoL")
     plt.plot(statDays, statDroneESoL, label="Drone ESoL")
     plt.plot(statDays, statGovtESoL, label="Govt ESoL")
+    plt.plot(statDays, statCGESoL, label="CG ESoL")
     plt.title("Average ESoL")
     plt.xlabel("Days")
     plt.ylabel("ESoL")
@@ -100,6 +107,7 @@ def main():
     plt.figure(6)
     plt.plot(statDays, statWagesAdjusted, label="Wage")
     plt.plot(statDays, statFoodPricesAdjusted, label="Food")
+    plt.plot(statDays, statCGPricesAdjusted, label="CG")
     plt.title("Adjusted Market Prices")
     plt.xlabel("Days")
     plt.ylabel("Credits/Credit")

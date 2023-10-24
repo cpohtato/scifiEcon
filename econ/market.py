@@ -57,7 +57,9 @@ class Market():
         return self.price
 
     def getSupplyAvailable(self):
-        return self.supplyTotal - self.supplySold
+        available = self.supplyTotal - self.supplySold
+        if (available < 0.0): available = 0.0
+        return available
 
     def getSupplyTotal(self):
         return self.supplyTotal

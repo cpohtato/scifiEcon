@@ -2,8 +2,8 @@ from .utils import *
 
 SIM_LENGTH: int = 720
 
-INIT_EXECS: int = 5
-INIT_DRONES: int = 10
+INIT_EXECS: int = 10
+INIT_DRONES: int = 50
 
 #   Proportion of goods in market sold to be considered market-clearing
 EQUILIBRIUM_RATIO = 0.9
@@ -36,36 +36,42 @@ DICT_POP = {
 
 FIRM_INIT_CRED = 10.0
 
-NUM_FIRM_TYPES = 2
+NUM_FIRM_TYPES = 3
 
 FIRM_ENERGY = 0
 FIRM_FOOD = 1
+FIRM_CONSUMER = 2
 
 DICT_FIRM = {
     FIRM_ENERGY: "Fusion",
-    FIRM_FOOD: "Food"
+    FIRM_FOOD: "Food",
+    FIRM_CONSUMER: "Consumer Goods"
 }
 
-NUM_MARKETS = 2
+NUM_MARKETS = 3
 
 MKT_LABOUR = 0
 MKT_FOOD = 1
+MKT_CONSUMER = 2
 
 DICT_MKT = {
     MKT_LABOUR: "Labour",
-    MKT_FOOD: "Food"
+    MKT_FOOD: "Food",
+    MKT_CONSUMER: "Consumer Goods"
 }
 
 CRED_PER_PP = 50.0
 
 DICT_PPC = {
     FIRM_ENERGY: 1.0/CRED_PER_PP,
-    FIRM_FOOD: 0.1
+    FIRM_FOOD: 0.1,
+    FIRM_CONSUMER: 0.1
 }
 
 DICT_VISC = {
     MKT_LABOUR: 1.0,
-    MKT_FOOD: 1.0
+    MKT_FOOD: 1.0,
+    MKT_CONSUMER: 1.0
 }
 
 INIT_GOVT_CRED = 20.0

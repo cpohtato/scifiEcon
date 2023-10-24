@@ -106,6 +106,7 @@ class Firm():
     def findGoodsProduced(self):
         prodPoints = self.prodFunc(self.capital, self.inv[0])
         goodsProduced = prodPoints / DICT_PPC[self.firmType]
+        if (goodsProduced < 0.0): goodsProduced = 0
         return goodsProduced
 
     def produceOutput(self):
