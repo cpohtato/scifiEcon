@@ -16,7 +16,7 @@ class Pop():
         self.foodStarved = False
         self.inv = [0.0 for good in range(NUM_MARKETS)]
 
-        self.energyPref = 0.5
+        self.energyPref = 0.1
         self.foodPref = 0.1
         self.cgPref = 0.5
 
@@ -148,28 +148,10 @@ class Pop():
         optFood = solution.x[1]
         optCG = solution.x[2]
 
-        
-
         bundle[MKT_FOOD] = optFood
         self.funds -= optFood * foodPrice
         bundle[MKT_CONSUMER] = optCG
         self.funds -= optCG * cgPrice
-
-        #   Hardcoded utility function, change later
-        #   U = Energy ^ Energy pref * Food ^ Food pref * CG ^ CG Pref
-
-        # optEnergy = disposable / (self.foodPref/self.energyPref + 1)
-
-        # if (foodPrice == None):
-        #     optFood = 0
-        # else:
-        #     optFood = self.foodPref/(self.energyPref * foodPrice) * optEnergy
-        #     # optFood = disposable / foodPrice
-
-        #     foodToBuy = min(optFood, foodSupply)
-        #     bundle[MKT_FOOD] = foodToBuy
-        #     self.inv[MKT_FOOD] += foodToBuy
-        #     self.funds -= foodToBuy * foodPrice
 
         #   Energy standard of living is a moving filter that represents pop expectations
         #   Energy just gets burned here

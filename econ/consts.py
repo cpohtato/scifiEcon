@@ -3,7 +3,7 @@ from .utils import *
 SIM_LENGTH: int = 360
 
 INIT_EXECS: int = 12
-INIT_DRONES: int = 50
+INIT_DRONES: int = 60
 
 #   Proportion of goods in market sold to be considered market-clearing
 EQUILIBRIUM_RATIO = 0.9

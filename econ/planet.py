@@ -25,10 +25,10 @@ class Planet():
 
         self.popsSupplyLabour()
         self.govtBuysLabour()
-        self.orderedFirmsBuyInputs()
+        self.orderedFirmsBuyAndProduce()
         self.popsReceiveWages()
         self.govtTaxesLabour()
-        self.firmsProduceOutput()
+        # self.firmsProduceOutput()
         self.govtSubsidisesPops()
         self.popsConsumeEnergyRequirement()
         self.popsBuyGoods()
@@ -77,7 +77,7 @@ class Planet():
             inputsConsumed: list[float] = self.listFirms[firmType][firmIdx].optimiseInput(marketConditions)
             self.buyBundleFromMarkets(inputsConsumed)
 
-    def orderedFirmsBuyInputs(self):
+    def orderedFirmsBuyAndProduce(self):
         #   Lowest firm type ID first
         for firmType in range(NUM_FIRM_TYPES):
             randOrder = self.getFirmRandOrder(True, firmType)
@@ -85,6 +85,11 @@ class Planet():
                 marketConditions: list[list[float]] = self.ensureMarketAnchored(firmType, firmIdx)
                 inputsConsumed: list[float] = self.listFirms[firmType][firmIdx].optimiseInput(marketConditions)
                 self.buyBundleFromMarkets(inputsConsumed)
+
+                #   Produce and put on market
+                outputsProduced = self.listFirms[firmType][firmIdx].produceOutput()
+                if (firmType == FIRM_ENERGY): continue
+                self.listMarkets[firmType].addSupply(outputsProduced)
 
     def getFirmRandOrder(self, orderedType: bool = False, firmType: int = -1):
         #   Random order of firms

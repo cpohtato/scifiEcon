@@ -11,7 +11,7 @@ class Firm():
 
         #   Should eventually include capital in inventory
         self.capital = initCap
-        self.inv = [0 for i in range(NUM_MARKETS)]
+        self.inv = [0.0 for i in range(NUM_MARKETS)]
 
         #   Start as competitively as possible
         self.markup = MIN_MARKUP
@@ -26,10 +26,14 @@ class Firm():
         labour = min(LKRatio * self.capital, maxLabour)
         if (labour == 0.0): return None
 
+        inputCost = 0.0
+        if (self.firmType == FIRM_CONSUMER):
+            inputCost = 1 * marketConditions[MKT_PLASTICS][0]
+
         #   Solving for price using labour estimate and minimum product markup
         #   This is best guess of lowest price possible for firm with adequate labour supply
         A = 1
-        newPrice = DICT_PPC[self.firmType] * MIN_MARKUP * wage / (A * (1 - labour/self.capital))
+        newPrice = DICT_PPC[self.firmType] * MIN_MARKUP * wage / (A * (1 - labour/self.capital)) + inputCost
         if (newPrice < 0): newPrice = 0
         return newPrice
 
@@ -37,7 +41,7 @@ class Firm():
         #   Production points = A * (L - L^2 / (2K))
         #   A is technology/other bonuses, K is capital, L is labour
 
-        prodPoints = L - pow(L, 2) / (2 * K)
+        prodPoints = 1.0 * (L - pow(L, 2) / (2 * K))
 
         return prodPoints
     
@@ -70,42 +74,94 @@ class Firm():
             optimalLabour = (self.funds * 0.5) / wage
 
         return optimalLabour
+    
+    def profitFunc(self, bundle: list[float], prices: list[float]):
+        if (self.firmType == FIRM_ENERGY):
+            revenue = self.prodFunc(self.capital, bundle[MKT_LABOUR]) / DICT_PPC[self.firmType]
+        if (self.firmType == FIRM_CONSUMER):
+            goodsProduced = self.prodFunc(self.capital, bundle[MKT_LABOUR]) / DICT_PPC[self.firmType]
+            goodsProduced = min(goodsProduced, 1.0 * bundle[MKT_PLASTICS])
+            revenue = goodsProduced * prices[self.firmType]
+        else:
+            goodsProduced = self.prodFunc(self.capital, bundle[MKT_LABOUR]) / DICT_PPC[self.firmType]
+            revenue = goodsProduced * prices[self.firmType]
+        
+        costs = bundle[MKT_LABOUR] * prices[MKT_LABOUR]
+        if (self.firmType == FIRM_CONSUMER): costs += goodsProduced * prices[MKT_PLASTICS]
+
+        profit = revenue - costs
+        return profit
+    
+    def negProfitFunc(self, bundle: list[float], prices: list[float]):
+        return -1.0 * self.profitFunc(bundle, prices)
 
     def optimiseInput(self, marketConditions: list[list[float]]):
         
         inputsConsumed = [0 for i in range(NUM_MARKETS)]
 
+        prices = []
+        supplyAvailable = []
+        for mkt in range(NUM_MARKETS):
+            if (marketConditions[mkt][0] == None): prices.append(0.0)
+            else: prices.append(marketConditions[mkt][0])
+            supplyAvailable.append(marketConditions[mkt][1])
+
+        supplyBounds = Bounds([0.0 for mkt in range(NUM_MARKETS)], supplyAvailable)
+        budget = LinearConstraint(prices, [-np.inf], [self.funds/2.0])
+        initBundle = [0.0 for mkt in range(NUM_MARKETS)]
+        solution = minimize(self.negProfitFunc,
+                            initBundle,
+                            prices,
+                            method='SLSQP',
+                            bounds=supplyBounds,
+                            constraints=budget)
+        inputsConsumed = solution.x
+        self.inv[MKT_LABOUR] = inputsConsumed[MKT_LABOUR]
+
+        if (self.firmType == FIRM_CONSUMER):
+            attemptToMake = self.findGoodsProduced()
+            if (attemptToMake > marketConditions[MKT_PLASTICS][1]):
+                self.inv[MKT_PLASTICS] = marketConditions[MKT_PLASTICS][1]
+            else:
+                self.inv[MKT_PLASTICS] = attemptToMake
+
+        for mkt in range(NUM_MARKETS):
+            self.dayExpenses += prices[mkt] * self.inv[mkt]
+
+        self.funds -= self.dayExpenses
+
         #   Only optimise labour for now
-        wage = marketConditions[MKT_LABOUR][0]
-        labourSupply = marketConditions[MKT_LABOUR][1]
-        if (labourSupply == 0.0): return inputsConsumed
-        if (wage == None): return inputsConsumed
+        # wage = marketConditions[MKT_LABOUR][0]
+        # labourSupply = marketConditions[MKT_LABOUR][1]
+        # if (labourSupply == 0.0): return inputsConsumed
+        # if (wage == None): return inputsConsumed
 
-        if not (self.firmType == FIRM_ENERGY):
-            price = marketConditions[self.firmType][0]
-            if (price == None): return inputsConsumed
+        # if not (self.firmType == FIRM_ENERGY):
+        #     price = marketConditions[self.firmType][0]
+        #     if (price == None): return inputsConsumed
 
-        requestedLabour: float = self.findOptimalLabour(marketConditions)
+        # requestedLabour: float = self.findOptimalLabour(marketConditions)
 
-        inputsConsumed[MKT_LABOUR] = requestedLabour
-        self.inv[0] = requestedLabour
-        wage = marketConditions[0][0]
-        labourExpenses = requestedLabour * wage
-        self.funds -= labourExpenses
+        # inputsConsumed[MKT_LABOUR] = requestedLabour
+        # self.inv[0] = requestedLabour
+        # wage = marketConditions[0][0]
+        # labourExpenses = requestedLabour * wage
+        
 
         #   Assuming that all machinery is utilised
-        machineryOperatingCost = self.capital * MACHINE_OP_COST
-        self.funds -= machineryOperatingCost
+        # machineryOperatingCost = self.capital * MACHINE_OP_COST
+        # self.funds -= machineryOperatingCost
 
-        self.dayExpenses += labourExpenses + machineryOperatingCost
+        # self.dayExpenses += labourExpenses #+ machineryOperatingCost
 
         # print(DICT_FIRM[self.firmType] + " hired " + str(round(requestedLabour, 2)))
 
-        return inputsConsumed
+        return self.inv
     
     def findGoodsProduced(self):
-        prodPoints = self.prodFunc(self.capital, self.inv[0])
+        prodPoints = self.prodFunc(self.capital, self.inv[MKT_LABOUR])
         goodsProduced = prodPoints / DICT_PPC[self.firmType]
+        # if (self.firmType == FIRM_CONSUMER): goodsProduced = min(goodsProduced, self.inv[MKT_PLASTICS])
         if (goodsProduced < 0.0): goodsProduced = 0
         return goodsProduced
 
@@ -147,7 +203,7 @@ class Firm():
         return dividend
     
     def refresh(self):
-        #   Consume all labour
-        self.inv[MKT_LABOUR] = 0
+        #   Consume all inputs
+        self.inv = [0.0 for i in range(NUM_MARKETS)]
         self.dayExpenses = 0.0
         self.dayRevenue = 0.0
