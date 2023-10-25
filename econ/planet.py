@@ -270,43 +270,15 @@ class Planet():
     def firmsPayDividends(self):
         #   Firms pay dividends
         #   Owner is hardcoded
-        #   TODO: make each firm search for owner by id to pay dividend
 
-        dividend = self.listFirms[FIRM_ENERGY][0].payDividend()
-        # print("Fusion dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][0].receiveDividend(dividend)
+        for firmType in range(NUM_FIRM_TYPES):
+            for firm in self.listFirms[firmType]:
+                dividend = firm.payDividend()
+                ownerId = firm.ownerId
 
-        dividend = self.listFirms[FIRM_FOOD][0].payDividend()
-        print("Farm 0 dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][1].receiveDividend(dividend)
-
-        dividend = self.listFirms[FIRM_FOOD][1].payDividend()
-        print("Farm 1 dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][2].receiveDividend(dividend)
-
-        dividend = self.listFirms[FIRM_FOOD][2].payDividend()
-        print("Farm 2 dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][3].receiveDividend(dividend)
-
-        dividend = self.listFirms[FIRM_FOOD][3].payDividend()
-        print("Farm 3 dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][5].receiveDividend(dividend)
-
-        dividend = self.listFirms[FIRM_FOOD][4].payDividend()
-        print("Farm 4 dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][6].receiveDividend(dividend)
-
-        dividend = self.listFirms[FIRM_FOOD][5].payDividend()
-        print("Farm 5 dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][7].receiveDividend(dividend)
-
-        dividend = self.listFirms[FIRM_CONSUMER][0].payDividend()
-        print("CG 0 dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][8].receiveDividend(dividend)
-
-        dividend = self.listFirms[FIRM_CONSUMER][1].payDividend()
-        print("CG 1 dividend paid: " + str(round(dividend, 2)) + "c")
-        self.listPops[JOB_EXEC][9].receiveDividend(dividend)
+                for exec in self.listPops[JOB_EXEC]:
+                    if (exec.popId == ownerId):
+                        exec.receiveDividend(dividend)
 
     def govtPaysRents(self):
         #   Hardcoded govt owner
@@ -435,12 +407,12 @@ class Planet():
                 pop.receiveSubsidy(credPerPop)
 
     def findAvgNettIncomes(self):
-        nettEnergyIncome = self.listPops[JOB_EXEC][0].income * (1 - self.govt.incomeTaxRate)
-        nettFoodIncome = (sum(pop.income * (1 - self.govt.incomeTaxRate) for pop in self.listPops[JOB_EXEC][1:4])
-                        + sum(pop.income * (1 - self.govt.incomeTaxRate) for pop in self.listPops[JOB_EXEC][5:8])) / 6
-        nettDroneIncome = sum(pop.income * (1 - self.govt.incomeTaxRate) for pop in self.listPops[JOB_DRONE]) / INIT_DRONES
-        nettGovtIncome = self.listPops[JOB_EXEC][4].income * (1 - self.govt.incomeTaxRate)
-        nettCGIncome = sum(pop.income * (1 - self.govt.incomeTaxRate) for pop in self.listPops[JOB_EXEC][8:]) / 2
+        nettEnergyIncome = self.listPops[JOB_EXEC][0].getNettIncome()
+        nettFoodIncome = (sum(pop.getNettIncome() for pop in self.listPops[JOB_EXEC][1:4])
+                        + sum(pop.getNettIncome() for pop in self.listPops[JOB_EXEC][5:8])) / 6
+        nettDroneIncome = sum(pop.getNettIncome() for pop in self.listPops[JOB_DRONE]) / INIT_DRONES
+        nettGovtIncome = self.listPops[JOB_EXEC][4].getNettIncome()
+        nettCGIncome = sum(pop.getNettIncome() for pop in self.listPops[JOB_EXEC][8:]) / 2
         return [nettEnergyIncome, nettFoodIncome, nettDroneIncome, nettGovtIncome, nettCGIncome]
 
     def initPops(self):

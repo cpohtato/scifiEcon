@@ -8,7 +8,9 @@ class Pop():
         self.edu: float = initEdu
         self.offeredLabour: bool = False
         self.offeredLabourAmount: float = 0.0
-        self.income: float = 0.0
+        self.dayGrossIncome: float = 0.0
+        self.daySubsidies: float = 0.0
+        self.dayTaxPaid: float = 0.0
         self.energyStarved: bool = False
         self.energyStandardOfLiving: float = 0.0
         self.foodStarved = False
@@ -36,15 +38,16 @@ class Pop():
     
     def receiveWage(self, clearingRatio: float, wage: float):
         if not self.offeredLabour: return
-        self.income = self.offeredLabourAmount * clearingRatio * wage
-        self.funds += self.income
+        self.dayGrossIncome = self.offeredLabourAmount * clearingRatio * wage
+        self.funds += self.dayGrossIncome
 
     def receiveDividend(self, dividend: float):
-        self.income = dividend
-        self.funds += self.income
+        self.dayGrossIncome += dividend
+        self.funds += self.dayGrossIncome
 
     def receiveSubsidy(self, subsidy: float):
-        self.funds += subsidy
+        self.daySubsidies += subsidy
+        self.funds += self.daySubsidies
 
     def receiveGoods(self, bundle: list[float]):
         for good in range(NUM_MARKETS):
@@ -187,13 +190,19 @@ class Pop():
     def refresh(self):
         self.offeredLabour = False
         self.offeredLabourAmount = 0.0
-        self.income = 0.0
+        self.dayGrossIncome = 0.0
+        self.daySubsidies = 0.0
+        self.dayTaxPaid= 0.0
     
     def getEdu(self):
         #   Could be more complicated in future
         return self.edu
     
     def payIncomeTax(self, incomeTaxRate: float):
-        tax = self.income * incomeTaxRate
-        self.funds -= tax
-        return tax
+        self.dayTaxPaid += self.dayGrossIncome * incomeTaxRate
+        self.funds -=self.dayTaxPaid
+        return self.dayTaxPaid
+    
+    def getNettIncome(self):
+        #   Includes income and subsidies less tax
+        return self.dayGrossIncome + self.daySubsidies - self.dayTaxPaid

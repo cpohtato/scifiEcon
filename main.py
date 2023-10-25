@@ -33,7 +33,7 @@ def main():
         print()
         print("===== Day " + str(day+1) + " =====")
 
-        if (day == 360):
+        if (day == 200):
             # arcadia.govt.incomeTaxRate = 0.2
             # arcadia.govt.companyTaxRate = 0.5
             arcadia.govt.energyTaxRate = 0.4

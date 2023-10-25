@@ -1,6 +1,6 @@
 from .utils import *
 
-SIM_LENGTH: int = 720
+SIM_LENGTH: int = 360
 
 INIT_EXECS: int = 10
 INIT_DRONES: int = 50
