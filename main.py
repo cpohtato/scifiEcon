@@ -14,6 +14,7 @@ def main():
     statCGPricesAdjusted = []
     statTotalEnergySupply = []
     statEmployment = []
+    statEmploymentWeekMA = []
     statEnergyPoor = []
     statFoodPoor = []
     statEnergyESoL = []
@@ -21,6 +22,10 @@ def main():
     statDroneESoL = []
     statGovtESoL = []
     statCGESoL = []
+    statLabourSold = []
+    statFoodSold = []
+    statPlasticsSold = []
+    statCGSold = []
 
     statEnergyIncome = []
     statFoodIncome = []
@@ -38,7 +43,7 @@ def main():
             # arcadia.govt.companyTaxRate = 0.5
             arcadia.govt.energyTaxRate = 0.4
 
-        mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL, incomes = arcadia.step()
+        mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL, incomes, sales = arcadia.step()
 
         statWages.append(mktPrices[MKT_LABOUR])
         statFoodPrices.append(mktPrices[MKT_FOOD])
@@ -69,8 +74,21 @@ def main():
         statDroneIncome.append(incomes[2])
         statGovtIncome.append(incomes[3])
         statCGIncome.append(incomes[4])
+        statLabourSold.append(sales[MKT_LABOUR])
+        statFoodSold.append(sales[MKT_FOOD])
+        statPlasticsSold.append(sales[MKT_PLASTICS])
+        statCGSold.append(sales[MKT_CONSUMER])
+
+        if (day < 6):
+            statEmploymentWeekMA.append(employment)
+        else:
+            avgEmp = sum(statEmployment[day-6:day+1]) / 7
+            statEmploymentWeekMA.append(avgEmp)
     
-    plt.figure(1)
+    figCount = 0
+
+    figCount += 1
+    plt.figure(figCount)
     plt.plot(statDays, statWages, label="Wage")
     plt.plot(statDays, statFoodPrices, label="Food")
     plt.plot(statDays, statCGPrices, label="CG")
@@ -80,21 +98,25 @@ def main():
     plt.xlim(1, SIM_LENGTH)
     plt.legend()
 
-    plt.figure(2)
+    figCount += 1
+    plt.figure(figCount)
     plt.plot(statDays, statTotalEnergySupply)
     plt.title("Total Energy Supply")
     plt.xlabel("Days")
     plt.ylabel("Credits")
     plt.xlim(1, SIM_LENGTH)
 
-    plt.figure(3)
-    plt.plot(statDays, statEmployment)
+    figCount += 1
+    plt.figure(figCount)
+    plt.plot(statDays, statEmployment, label='Raw')
+    plt.plot(statDays, statEmploymentWeekMA, label='Moving Avg')
     plt.title("Employment")
     plt.xlabel("Days")
     plt.ylabel("Employment ratio")
     plt.xlim(1, SIM_LENGTH)
 
-    plt.figure(4)
+    figCount += 1
+    plt.figure(figCount)
     plt.plot(statDays, statEnergyPoor, label="Energy Poor")
     plt.plot(statDays, statFoodPoor, label="Food Poor")
     plt.title("Poverty")
@@ -103,19 +125,21 @@ def main():
     plt.xlim(1, SIM_LENGTH)
     plt.legend()
 
-    plt.figure(5)
-    plt.plot(statDays, statEnergyESoL, label="Energy ESoL")
-    plt.plot(statDays, statFoodESoL, label="Food ESoL")
-    plt.plot(statDays, statDroneESoL, label="Drone ESoL")
-    plt.plot(statDays, statGovtESoL, label="Govt ESoL")
-    plt.plot(statDays, statCGESoL, label="CG ESoL")
-    plt.title("Average ESoL")
-    plt.xlabel("Days")
-    plt.ylabel("ESoL")
-    plt.xlim(1, SIM_LENGTH)
-    plt.legend()
+    # figCount += 1
+    # plt.figure(figCount)
+    # plt.plot(statDays, statEnergyESoL, label="Energy ESoL")
+    # plt.plot(statDays, statFoodESoL, label="Food ESoL")
+    # plt.plot(statDays, statDroneESoL, label="Drone ESoL")
+    # plt.plot(statDays, statGovtESoL, label="Govt ESoL")
+    # plt.plot(statDays, statCGESoL, label="CG ESoL")
+    # plt.title("Average ESoL")
+    # plt.xlabel("Days")
+    # plt.ylabel("ESoL")
+    # plt.xlim(1, SIM_LENGTH)
+    # plt.legend()
 
-    plt.figure(6)
+    figCount += 1
+    plt.figure(figCount)
     plt.plot(statDays, statWagesAdjusted, label="Wage")
     plt.plot(statDays, statFoodPricesAdjusted, label="Food")
     plt.plot(statDays, statCGPricesAdjusted, label="CG")
@@ -125,7 +149,8 @@ def main():
     plt.xlim(1, SIM_LENGTH)
     plt.legend()
 
-    plt.figure(7)
+    figCount += 1
+    plt.figure(figCount)
     plt.plot(statDays, statEnergyIncome, label="Energy")
     plt.plot(statDays, statFoodIncome, label="Food")
     plt.plot(statDays, statDroneIncome, label="Drone")
@@ -134,6 +159,18 @@ def main():
     plt.title("Average Income")
     plt.xlabel("Days")
     plt.ylabel("Credits")
+    plt.xlim(1, SIM_LENGTH)
+    plt.legend()
+
+    figCount += 1
+    plt.figure(figCount)
+    plt.plot(statDays, statLabourSold, label="Labour")
+    plt.plot(statDays, statFoodSold, label="Food")
+    plt.plot(statDays, statCGSold, label="CG")
+    plt.plot(statDays, statPlasticsSold, label="Plastics")
+    plt.title("Market Sales")
+    plt.xlabel("Days")
+    plt.ylabel("Qty")
     plt.xlim(1, SIM_LENGTH)
     plt.legend()
 

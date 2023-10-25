@@ -25,7 +25,7 @@ class Planet():
 
         self.popsSupplyLabour()
         self.govtBuysLabour()
-        self.firmsBuyInputs()
+        self.orderedFirmsBuyInputs()
         self.popsReceiveWages()
         self.govtTaxesLabour()
         self.firmsProduceOutput()
@@ -40,19 +40,11 @@ class Planet():
         self.govtPaysRents()
         self.govtTaxesExecs()
         print("Govt tax raised: " + str(round(self.govt.dayTaxRaised, 2)) + "c")
-        
-        #   Record stats before refresh
-        mktPrices = self.getMarketPrices()
-        employment = self.listMarkets[MKT_LABOUR].getClearingRatio()
-        # self.printFunds()
-        energyPoor, foodPoor = self.findPoverty()
-        totalEnergySupply = self.findTotalEnergySupply()
-        avgESoL = self.findAvgESoL()
-        avgNettIncomes = self.findAvgNettIncomes()
-
+        mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL, avgNettIncomes, sales = self.recordStats()
+    
         self.refreshEconomy()
 
-        return mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL, avgNettIncomes
+        return mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL, avgNettIncomes, sales
 
     def popsSupplyLabour(self):
         for drone in self.listPops[JOB_DRONE]:
@@ -78,17 +70,29 @@ class Planet():
 
     def firmsBuyInputs(self):
         #   Firms optimise input bundle
-        randOrder = self.getFirmRandOrder()
+        randOrder = self.getFirmRandOrder(False)
         for randFirm in randOrder:
             firmType, firmIdx = self.findRandFirm(randFirm)
             marketConditions: list[list[float]] = self.ensureMarketAnchored(firmType, firmIdx)
             inputsConsumed: list[float] = self.listFirms[firmType][firmIdx].optimiseInput(marketConditions)
             self.buyBundleFromMarkets(inputsConsumed)
 
-    def getFirmRandOrder(self):
+    def orderedFirmsBuyInputs(self):
+        #   Lowest firm type ID first
+        for firmType in range(NUM_FIRM_TYPES):
+            randOrder = self.getFirmRandOrder(True, firmType)
+            for firmIdx in randOrder:
+                marketConditions: list[list[float]] = self.ensureMarketAnchored(firmType, firmIdx)
+                inputsConsumed: list[float] = self.listFirms[firmType][firmIdx].optimiseInput(marketConditions)
+                self.buyBundleFromMarkets(inputsConsumed)
+
+    def getFirmRandOrder(self, orderedType: bool = False, firmType: int = -1):
         #   Random order of firms
         #   TODO: rework this so that we can get pop or firm rand order with same function
-        numFirms = sum(len(industry) for industry in self.listFirms)
+        if (orderedType):
+            numFirms = len(self.listFirms[firmType])
+        else:
+            numFirms = sum(len(industry) for industry in self.listFirms)
         randOrder = list(range(numFirms))
         random.shuffle(randOrder)
         return randOrder
@@ -469,6 +473,13 @@ class Planet():
         listFirms[FIRM_CONSUMER].append(Firm(idCounter, 9, FIRM_CONSUMER, FIRM_INIT_CRED, 15.0))
         idCounter += 1
 
+        #   Plastics
+        listFirms[FIRM_PLASTICS].append(Firm(idCounter, 10, FIRM_PLASTICS, FIRM_INIT_CRED, 25.0))
+        idCounter += 1
+
+        listFirms[FIRM_PLASTICS].append(Firm(idCounter, 11, FIRM_PLASTICS, FIRM_INIT_CRED, 20.0))
+        idCounter += 1
+
         return listFirms
     
     def initMarkets(self):
@@ -480,3 +491,17 @@ class Planet():
     def initGovt(self):
         #   Create some GovtPolicy class to contain all rules for govt
         return Govt(INIT_GOVT_CRED, GOVT_INCOME_TAX_RATE, GOVT_COMPANY_TAX_RATE, GOVT_ENERGY_TAX_RATE)
+    
+    def recordStats(self):
+        mktPrices = self.getMarketPrices()
+        employment = self.listMarkets[MKT_LABOUR].getClearingRatio()
+        # self.printFunds()
+        energyPoor, foodPoor = self.findPoverty()
+        totalEnergySupply = self.findTotalEnergySupply()
+        avgESoL = self.findAvgESoL()
+        avgNettIncomes = self.findAvgNettIncomes()
+
+        sales = []
+        for mkt in range(NUM_MARKETS):
+            sales.append(self.listMarkets[mkt].getSupplySold())
+        return mktPrices, employment, energyPoor, foodPoor, totalEnergySupply, avgESoL, avgNettIncomes, sales

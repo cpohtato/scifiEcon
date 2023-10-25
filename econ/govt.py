@@ -35,7 +35,7 @@ class Govt():
         else:
             labourRequested = 0.0
             self.dayVariableRent += self.funds
-            
+
         self.funds -= labourRequested * wage
         self.dayVariableRent += labourRequested * wage * self.inefficiency
         self.dayAdminRatio = labourRequested / labourDemand
@@ -63,7 +63,7 @@ class Govt():
         return welfareBudget, deficitSubsidyRatio
     
     def payRent(self):
-        rent = (self.funds - self.dayVariableRent) * DIVIDEND_RATIO * 2
+        rent = (self.funds - self.dayVariableRent) * DIVIDEND_RATIO
         rent += self.dayVariableRent
         self.funds -= rent
         return rent
