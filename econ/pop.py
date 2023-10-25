@@ -20,18 +20,18 @@ class Pop():
         self.foodPref = 0.1
         self.cgPref = 0.5
 
-    def offerLabour(self, wage: float, foodPrice: float, incomeTaxRate: float):
+    def offerLabour(self, wage: float, foodPrice: float, cgPrice: float, incomeTaxRate: float):
         self.offeredLabour = True
         labourMax = self.edu
-        costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving
+        costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving + cgPrice
         ratio = (wage * (1 - incomeTaxRate) * labourMax * EQUILIBRIUM_RATIO) / (costOfLiving * MIN_MARKUP)
         labourOffered = ratio * EQUILIBRIUM_RATIO * labourMax
         labourOffered = min(labourOffered, labourMax)
         self.offeredLabourAmount = labourOffered
         return labourOffered
     
-    def priceLabour(self, foodPrice: float, incomeTaxRate: float):
-        costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving
+    def priceLabour(self, foodPrice: float, cgPrice: float, incomeTaxRate: float):
+        costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving + cgPrice
         labourOffered = self.edu * EQUILIBRIUM_RATIO
         newWage = (costOfLiving / labourOffered) / (1 - incomeTaxRate)
         return newWage

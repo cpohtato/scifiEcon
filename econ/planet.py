@@ -60,13 +60,16 @@ class Planet():
             if (self.listMarkets[MKT_FOOD].getPrice() == None): foodPrice = 1.0
             else: foodPrice = self.listMarkets[MKT_FOOD].getPrice()
 
+            if (self.listMarkets[MKT_CONSUMER].getPrice() == None): cgPrice = 1.0
+            else: cgPrice = self.listMarkets[MKT_CONSUMER].getPrice()
+
             if (self.listMarkets[MKT_LABOUR].getPrice() == None):
-                wage: float = drone.priceLabour(foodPrice, self.govt.incomeTaxRate)
+                wage: float = drone.priceLabour(foodPrice, cgPrice, self.govt.incomeTaxRate)
                 self.listMarkets[MKT_LABOUR].setPrice(wage)
             else: 
                 wage = self.listMarkets[MKT_LABOUR].getPrice()
 
-            self.listMarkets[MKT_LABOUR].addSupply(drone.offerLabour(wage, foodPrice, self.govt.incomeTaxRate))
+            self.listMarkets[MKT_LABOUR].addSupply(drone.offerLabour(wage, foodPrice, cgPrice, self.govt.incomeTaxRate))
 
     def govtBuysLabour(self):
         marketConditions = self.getMarketConditions()
