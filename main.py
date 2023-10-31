@@ -5,9 +5,11 @@ def main():
     arcadia = Planet()
 
     #   Stats
+    #   TODO: make some class for all this info
     statDays = [i for i in range(1, 1 + SIM_LENGTH)]
     statWages = []
     statFoodPrices = []
+    statPlasticsPrices = []
     statCGPrices = []
     statWagesAdjusted = []
     statFoodPricesAdjusted = []
@@ -47,6 +49,7 @@ def main():
 
         statWages.append(mktPrices[MKT_LABOUR])
         statFoodPrices.append(mktPrices[MKT_FOOD])
+        statPlasticsPrices.append(mktPrices[MKT_PLASTICS])
         statCGPrices.append(mktPrices[MKT_CONSUMER])
         statEmployment.append(employment)
         statEnergyPoor.append(energyPoor)
@@ -91,6 +94,7 @@ def main():
     plt.figure(figCount)
     plt.plot(statDays, statWages, label="Wage")
     plt.plot(statDays, statFoodPrices, label="Food")
+    plt.plot(statDays, statPlasticsPrices, label="Plastics")
     plt.plot(statDays, statCGPrices, label="CG")
     plt.title("Market Prices")
     plt.xlabel("Days")

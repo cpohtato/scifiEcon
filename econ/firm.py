@@ -30,10 +30,10 @@ class Firm():
         if (self.firmType == FIRM_CONSUMER):
             inputCost = 1 * marketConditions[MKT_PLASTICS][0]
 
-        #   Solving for price using labour estimate and minimum product markup
+        #   Solving for price using labour estimate and product markup
         #   This is best guess of lowest price possible for firm with adequate labour supply
         A = 1
-        newPrice = DICT_PPC[self.firmType] * MIN_MARKUP * wage / (A * (1 - labour/self.capital)) + inputCost
+        newPrice = DICT_PPC[self.firmType] * MAX_MARKUP * wage / (A * (1 - labour/self.capital)) + inputCost
         if (newPrice < 0): newPrice = 0
         return newPrice
 
@@ -78,13 +78,13 @@ class Firm():
     def profitFunc(self, bundle: list[float], prices: list[float]):
         if (self.firmType == FIRM_ENERGY):
             revenue = self.prodFunc(self.capital, bundle[MKT_LABOUR]) / DICT_PPC[self.firmType]
-        if (self.firmType == FIRM_CONSUMER):
+        elif (self.firmType == FIRM_CONSUMER):
             goodsProduced = self.prodFunc(self.capital, bundle[MKT_LABOUR]) / DICT_PPC[self.firmType]
             goodsProduced = min(goodsProduced, 1.0 * bundle[MKT_PLASTICS])
-            revenue = goodsProduced * prices[self.firmType]
+            revenue = goodsProduced * prices[self.firmType] * EQUILIBRIUM_RATIO
         else:
             goodsProduced = self.prodFunc(self.capital, bundle[MKT_LABOUR]) / DICT_PPC[self.firmType]
-            revenue = goodsProduced * prices[self.firmType]
+            revenue = goodsProduced * prices[self.firmType] * EQUILIBRIUM_RATIO
         
         costs = bundle[MKT_LABOUR] * prices[MKT_LABOUR]
         if (self.firmType == FIRM_CONSUMER): costs += goodsProduced * prices[MKT_PLASTICS]
@@ -94,8 +94,65 @@ class Firm():
     
     def negProfitFunc(self, bundle: list[float], prices: list[float]):
         return -1.0 * self.profitFunc(bundle, prices)
+    
+    def searchMaxProfit(self, supplyAvailable: list[float], supplyPrices: list[float], budget: float, numPoints: int):
+        searchBounds = supplyAvailable
+        for goodType in DICT_INPUTS[self.firmType]:
+            maxCanBuy = budget / supplyPrices[goodType]
+            if (maxCanBuy < searchBounds[goodType]): searchBounds[goodType] = maxCanBuy
+
+        if (self.firmType == FIRM_PLASTICS):
+            searchLabour = np.linspace(0, searchBounds[MKT_LABOUR], numPoints).tolist()
+            maxProfit = 0.0
+            optLabour = 0.0
+            for labour in searchLabour[1:]:
+                cost = labour * supplyPrices[MKT_LABOUR]
+                if (cost > budget): break
+
+                inputBundle = [0.0 for i in range(NUM_MARKETS)]
+                inputBundle[MKT_LABOUR] = labour
+
+                profit = self.profitFunc(inputBundle, supplyPrices)
+                if (profit > maxProfit):
+                    maxProfit = profit
+                    optLabour = labour
+
+            optInputBundle = [0.0 for i in range(NUM_MARKETS)]
+            optInputBundle[MKT_LABOUR] = optLabour
+            return optInputBundle
+
+        if (self.firmType == FIRM_CONSUMER):
+
+            searchLabour = np.linspace(0, searchBounds[MKT_LABOUR], numPoints).tolist()
+            searchPlastics = np.linspace(0, searchBounds[MKT_PLASTICS], numPoints).tolist()
+
+            maxProfit = 0.0
+            optLabour = 0.0
+            optPlastics = 0.0
+
+            for labour in searchLabour[1:]:
+                for plastics in searchPlastics[1:]:
+                    cost = labour * supplyPrices[MKT_LABOUR] + plastics * supplyPrices[MKT_PLASTICS]
+                    if (cost > budget): break
+
+                    inputBundle = [0.0 for i in range(NUM_MARKETS)]
+                    inputBundle[MKT_LABOUR] = labour
+                    inputBundle[MKT_PLASTICS] = plastics
+
+                    profit = self.profitFunc(inputBundle, supplyPrices)
+                    if (profit > maxProfit):
+                        maxProfit = profit
+                        optLabour = labour
+                        optPlastics = plastics
+
+            optInputBundle = [0.0 for i in range(NUM_MARKETS)]
+            optInputBundle[MKT_LABOUR] = optLabour
+            optInputBundle[MKT_PLASTICS] = optPlastics
+            return optInputBundle
 
     def optimiseInput(self, marketConditions: list[list[float]]):
+
+        #   TODO: pls clean this disgusting mess
         
         inputsConsumed = [0 for i in range(NUM_MARKETS)]
 
@@ -106,24 +163,39 @@ class Firm():
             else: prices.append(marketConditions[mkt][0])
             supplyAvailable.append(marketConditions[mkt][1])
 
-        supplyBounds = Bounds([0.0 for mkt in range(NUM_MARKETS)], supplyAvailable)
-        budget = LinearConstraint(prices, [-np.inf], [self.funds/2.0])
-        initBundle = [0.0 for mkt in range(NUM_MARKETS)]
-        solution = minimize(self.negProfitFunc,
-                            initBundle,
-                            prices,
-                            method='SLSQP',
-                            bounds=supplyBounds,
-                            constraints=budget)
-        inputsConsumed = solution.x
-        self.inv[MKT_LABOUR] = inputsConsumed[MKT_LABOUR]
+        if (self.firmType == FIRM_PLASTICS):
+            inputsConsumed = self.searchMaxProfit(supplyAvailable, prices, self.funds/2.0, 50)
+            #   TODO: clean this
+            self.inv[MKT_LABOUR] = inputsConsumed[MKT_LABOUR]
 
-        if (self.firmType == FIRM_CONSUMER):
-            attemptToMake = self.findGoodsProduced()
-            if (attemptToMake > marketConditions[MKT_PLASTICS][1]):
-                self.inv[MKT_PLASTICS] = marketConditions[MKT_PLASTICS][1]
-            else:
-                self.inv[MKT_PLASTICS] = attemptToMake
+        elif (self.firmType == FIRM_CONSUMER):
+            inputsConsumed = self.searchMaxProfit(supplyAvailable, prices, self.funds/2.0, 50)
+            #   TODO: clean this
+            self.inv[MKT_LABOUR] = inputsConsumed[MKT_LABOUR]
+            self.inv[MKT_PLASTICS] = inputsConsumed[MKT_PLASTICS]
+
+        else:
+
+            supplyBounds = Bounds([0.0 for mkt in range(NUM_MARKETS)], supplyAvailable)
+            budget = LinearConstraint(prices, [-np.inf], [self.funds/2.0])
+            initBundle = [0.0 for mkt in range(NUM_MARKETS)]
+            solution = minimize(self.negProfitFunc,
+                                initBundle,
+                                prices,
+                                method='SLSQP',
+                                bounds=supplyBounds,
+                                constraints=budget)
+            inputsConsumed = solution.x
+            self.inv[MKT_LABOUR] = inputsConsumed[MKT_LABOUR]
+
+        
+
+        # if (self.firmType == FIRM_CONSUMER):
+        #     attemptToMake = self.findGoodsProduced()
+        #     if (attemptToMake > marketConditions[MKT_PLASTICS][1]):
+        #         self.inv[MKT_PLASTICS] = marketConditions[MKT_PLASTICS][1]
+        #     else:
+        #         self.inv[MKT_PLASTICS] = attemptToMake
 
         for mkt in range(NUM_MARKETS):
             self.dayExpenses += prices[mkt] * self.inv[mkt]

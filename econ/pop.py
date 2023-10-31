@@ -16,16 +16,18 @@ class Pop():
         self.foodStarved = False
         self.inv = [0.0 for good in range(NUM_MARKETS)]
 
-        self.energyPref = 0.1
-        self.foodPref = 0.1
-        self.cgPref = 0.5
+        self.energyPref = 0.05 + 0.1 * random.random()
+        self.foodPref = 0.05 + 0.1 * random.random()
+        self.cgPref = 0.6 + 0.3 * random.random()
+
+        self.willingnessToWork = 0.9 + 0.2 * random.random()
 
     def offerLabour(self, wage: float, foodPrice: float, cgPrice: float, incomeTaxRate: float):
         self.offeredLabour = True
         labourMax = self.edu
         costOfLiving = DAILY_CRED_REQ + foodPrice + self.energyStandardOfLiving + cgPrice
         ratio = (wage * (1 - incomeTaxRate) * labourMax * EQUILIBRIUM_RATIO) / (costOfLiving * MIN_MARKUP)
-        labourOffered = ratio * EQUILIBRIUM_RATIO * labourMax
+        labourOffered = ratio * EQUILIBRIUM_RATIO * labourMax * self.willingnessToWork
         labourOffered = min(labourOffered, labourMax)
         self.offeredLabourAmount = labourOffered
         return labourOffered

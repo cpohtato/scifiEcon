@@ -9,7 +9,7 @@ class Govt():
         self.dayTaxRaised: float = 0.0
         self.dayVariableRent: float = 0.0
         self.dayAdminRatio: float = 1.0
-        self.inefficiency: float = 0.25
+        self.inefficiency: float = 0.10
 
         self.policyEnergyRedistribution = True
         self.policyFoodRedistribution = True

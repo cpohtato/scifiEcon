@@ -436,7 +436,7 @@ class Planet():
             idCounter += 1
 
         for i in range(INIT_DRONES):
-            randEdu = 0.25 + 0.5 * random.random()
+            randEdu = 0.4 + 0.2 * random.random()
             listPops[JOB_DRONE].append(Pop(idCounter, JOB_DRONE, POP_INIT_CRED, randEdu))
             idCounter += 1
 
