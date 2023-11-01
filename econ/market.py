@@ -6,6 +6,7 @@ class Market():
         self.price = price
         self.supplyTotal: float = 0.0
         self.supplySold: float = 0.0
+        self.lastValidPrice: float = price
 
     def addSupply(self, supply: float):
         self.supplyTotal += supply
@@ -38,6 +39,7 @@ class Market():
     def adjustPrice(self):
 
         if (self.supplyTotal == 0.0):
+            self.lastValidPrice = self.price
             self.price = None
             return
 

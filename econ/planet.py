@@ -49,11 +49,13 @@ class Planet():
     def popsSupplyLabour(self):
         for drone in self.listPops[JOB_DRONE]:
 
-            if (self.listMarkets[MKT_FOOD].getPrice() == None): foodPrice = 1.0
-            else: foodPrice = self.listMarkets[MKT_FOOD].getPrice()
+            if not (self.listMarkets[MKT_FOOD].getPrice() == None): foodPrice = self.listMarkets[MKT_FOOD].getPrice()
+            elif not (self.listMarkets[MKT_FOOD].lastValidPrice == None): foodPrice = self.listMarkets[MKT_FOOD].lastValidPrice
+            else: foodPrice = 1.0
 
-            if (self.listMarkets[MKT_CONSUMER].getPrice() == None): cgPrice = 1.0
-            else: cgPrice = self.listMarkets[MKT_CONSUMER].getPrice()
+            if not (self.listMarkets[MKT_CONSUMER].getPrice() == None): cgPrice = self.listMarkets[MKT_CONSUMER].getPrice()
+            elif not (self.listMarkets[MKT_CONSUMER].lastValidPrice == None): cgPrice = self.listMarkets[MKT_CONSUMER].lastValidPrice
+            else: cgPrice = 1.0
 
             if (self.listMarkets[MKT_LABOUR].getPrice() == None):
                 wage: float = drone.priceLabour(foodPrice, cgPrice, self.govt.incomeTaxRate)
@@ -61,7 +63,8 @@ class Planet():
             else: 
                 wage = self.listMarkets[MKT_LABOUR].getPrice()
 
-            self.listMarkets[MKT_LABOUR].addSupply(drone.offerLabour(wage, foodPrice, cgPrice, self.govt.incomeTaxRate))
+            # self.listMarkets[MKT_LABOUR].addSupply(drone.offerLabour(wage, foodPrice, cgPrice, self.govt.incomeTaxRate))
+            self.listMarkets[MKT_LABOUR].addSupply(drone.offerLabour(wage, foodPrice, foodPrice * 2, self.govt.incomeTaxRate))
 
     def govtBuysLabour(self):
         marketConditions = self.getMarketConditions()
